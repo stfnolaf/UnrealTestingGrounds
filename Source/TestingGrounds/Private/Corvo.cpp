@@ -5,6 +5,8 @@
 #include "Runtime/Engine/Classes/Engine/World.h"
 #include "Runtime/Engine/Public/TimerManager.h"
 #include "Runtime/Engine/Public/DrawDebugHelpers.h"
+#include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
+#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 
 // Sets default values
 ACorvo::ACorvo()
@@ -107,7 +109,7 @@ void ACorvo::OnTeleport() {
 	if (GetWorld()->LineTraceSingleByChannel(
 			hit, 
 			corvoCam->GetOwner()->GetActorLocation(),
-			corvoCam->GetForwardVector() * 8000.0f + corvoCam->GetOwner()->GetActorLocation(),
+			corvoCam->GetForwardVector() * 10000.0f + corvoCam->GetOwner()->GetActorLocation(),
 			ECollisionChannel::ECC_Visibility
 		) && cameraFOVCurve
 	) {
@@ -117,14 +119,26 @@ void ACorvo::OnTeleport() {
 		// WAIT 0.15 seconds and then teleport
 		FTimerDelegate teleportTimerDeleg;
 		teleportTimerDeleg.BindUFunction(this, FName("SetNewLoc"), hit.Location, corvoCam->GetOwner()->GetActorLocation());
-		GetWorldTimerManager().SetTimer(teleportDelayHandle, teleportTimerDeleg, 0.15f, false);
+		GetWorldTimerManager().SetTimer(teleportDelayHandle, teleportTimerDeleg, 0.125f, false);
 	}
 
 }
 
 void ACorvo::SetNewLoc(FVector endVect, FVector startVect)
 {
-	SetActorLocation(endVect);
+	FLatentActionInfo info;
+	info.CallbackTarget = this;
+	UKismetSystemLibrary::MoveComponentTo(
+		GetRootComponent(), 
+		endVect, 
+		FRotator(0.0f,0.0f,0.0f), 
+		false, 
+		false, 
+		0.01f, 
+		true,
+		EMoveComponentAction::Move, 
+		info
+	);
 	DrawDebugLine(GetWorld(), startVect, endVect, FColor::Red, false, 5.0f);
 }
 
