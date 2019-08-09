@@ -3,6 +3,8 @@
 
 #include "Corvo.h"
 #include "Runtime/Engine/Classes/Engine/World.h"
+#include "Runtime/Engine/Public/TimerManager.h"
+#include "Runtime/Engine/Public/DrawDebugHelpers.h"
 
 // Sets default values
 ACorvo::ACorvo()
@@ -10,22 +12,23 @@ ACorvo::ACorvo()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	handBounceTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Timeline"));
+	// SET UP HAND BOUNCE TIMELINE
+	handBounceTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Hand Bounce Timeline"));
 
+	// SET UP DELEGATES FOR HAND BOUNCE MOVEMENT
 	HandInterpFunction.BindUFunction(this, FName("HandTimelineFloatReturn"));
 	HandTimelineFinished.BindUFunction(this, FName("OnHandTimelineFinished"));
 
-	handZOffset = 5.0f;
+	// SET UP TELEPORTATION FOV TIMELINE
+	teleportFOVTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Teleport FOV Timeline"));
 
-	cameraFOVTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("FOV Timeline"));
-
+	// SET UP DELEGATES FOR CAMERA FOV
 	CamFOVInterpFunction.BindUFunction(this, FName("CamTimelineFloatReturn"));
-	CamFOVTimelineFinished.BindUFunction(this, FName("OnCamTimelineFinished"));
 }
 
 void ACorvo::HandTimelineFloatReturn(float value)
 {
-	Hand->SetRelativeLocation(FMath::Lerp(startLocation, endLocation, value), false, nullptr, ETeleportType::None);
+	Hand->SetRelativeLocation(FMath::Lerp(handStartPos, handOffsetPos, value), false, nullptr, ETeleportType::None);
 }
 
 void ACorvo::OnHandTimelineFinished()
@@ -41,28 +44,42 @@ void ACorvo::CamTimelineFloatReturn(float value)
 	corvoCam->SetFieldOfView(FMath::Lerp(cameraDefaultFOV, cameraTeleportFOV, value));
 }
 
-void ACorvo::OnCamTimelineFinished()
-{
-	return;
-}
-
 // Called when the game starts or when spawned
 void ACorvo::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// IF WE HAVE A CURVE
 	if (handBounceCurve) {
+		// SET CALL HandInterpFunction WITH handBounceCurve AS VALUES WHILE RUNNING TIMELINE
 		handBounceTimeline->AddInterpFloat(handBounceCurve, HandInterpFunction, FName("Alpha"));
+		// ON TIMELINE FINISHED CALL HandTimelineFinished DELEGATE
 		handBounceTimeline->SetTimelineFinishedFunc(HandTimelineFinished);
 
-		startLocation = Hand->RelativeLocation;
+		// SET UP HAND START AND END POSITIONS
+		handStartPos = Hand->RelativeLocation;
+		handOffsetPos = FVector(handStartPos.X, handStartPos.Y, handStartPos.Z + handZOffset);
 
-		endLocation = FVector(startLocation.X, startLocation.Y, startLocation.Z + handZOffset);
-
+		// OTHER TIMELINE PROPERTIES
 		handBounceTimeline->SetLooping(false);
 		handBounceTimeline->SetIgnoreTimeDilation(false);
 
+		// LET THIS TIMELINE LOOP AND REVERSE ENDLESSLY
 		handBounceTimeline->Play();
+	}
+
+	// IF WE HAVE A CAMERA FOV CURVE
+	if (cameraFOVCurve) {
+		// SET CALL CamFOVInterpFunction WITH cameraFOVCurve AS VALUES WHILE RUNNINE TIMELINE
+		teleportFOVTimeline->AddInterpFloat(cameraFOVCurve, CamFOVInterpFunction, FName("Alpha"));
+
+		// SET UP FOV START AND END VALUES
+		cameraDefaultFOV = 106.0f;
+		cameraTeleportFOV = cameraDefaultFOV + 20.0f;
+
+		// OTHER TIMELINE PROPERTIES
+		teleportFOVTimeline->SetLooping(false);
+		teleportFOVTimeline->SetIgnoreTimeDilation(false);
 	}
 }
 
@@ -80,6 +97,8 @@ void ACorvo::MoveRight(float Value) {
 
 void ACorvo::OnInitiateTeleport() {
 	Hand->SetMaterial(0, blue);
+
+	// TODO  - Add teleportation indicator
 }
 
 void ACorvo::OnTeleport() {
@@ -88,29 +107,25 @@ void ACorvo::OnTeleport() {
 	if (GetWorld()->LineTraceSingleByChannel(
 			hit, 
 			corvoCam->GetOwner()->GetActorLocation(),
-			corvoCam->GetOwner()->GetActorForwardVector() * 8000.0f + corvoCam->GetOwner()->GetActorLocation(),
+			corvoCam->GetForwardVector() * 8000.0f + corvoCam->GetOwner()->GetActorLocation(),
 			ECollisionChannel::ECC_Visibility
 		) && cameraFOVCurve
 	) {
-		cameraFOVTimeline->AddInterpFloat(cameraFOVCurve, CamFOVInterpFunction, FName("Alpha"));
-		cameraFOVTimeline->SetTimelineFinishedFunc(CamFOVTimelineFinished);
 
-		cameraDefaultFOV = 106.0f;
+		teleportFOVTimeline->PlayFromStart();
 
-		cameraTeleportFOV = cameraDefaultFOV + 20.0f;
-
-		cameraFOVTimeline->SetLooping(false);
-		cameraFOVTimeline->SetIgnoreTimeDilation(false);
-
-		cameraFOVTimeline->PlayFromStart();
-
-		//TODO - add 0.15 second delay and then set new character location
+		// WAIT 0.15 seconds and then teleport
+		FTimerDelegate teleportTimerDeleg;
+		teleportTimerDeleg.BindUFunction(this, FName("SetNewLoc"), hit.Location, corvoCam->GetOwner()->GetActorLocation());
+		GetWorldTimerManager().SetTimer(teleportDelayHandle, teleportTimerDeleg, 0.15f, false);
 	}
 
 }
 
-void ACorvo::SetNewLoc()
+void ACorvo::SetNewLoc(FVector endVect, FVector startVect)
 {
+	SetActorLocation(endVect);
+	DrawDebugLine(GetWorld(), startVect, endVect, FColor::Red, false, 5.0f);
 }
 
 // Called every frame
@@ -137,9 +152,6 @@ void ACorvo::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis("MoveForward", this, &ACorvo::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ACorvo::MoveRight);
 
-	// We have 2 versions of the rotation bindings to handle different kinds of devices differently
-	// "turn" handles devices that provide an absolute delta, such as a mouse.
-	// "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 

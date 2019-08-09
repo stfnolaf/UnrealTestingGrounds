@@ -22,65 +22,53 @@ public:
 	// HAND ANIMATION VARIABLES
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
 	UStaticMeshComponent* Hand = nullptr;
-
 	UPROPERTY(EditAnywhere, Category = "Corvo")
 	UCurveFloat* handBounceCurve;
-
-	UPROPERTY()
-	FVector startLocation;
-
-	UPROPERTY()
-	FVector endLocation;
-
 	UPROPERTY(EditAnywhere, Category = "Corvo")
 	float handZOffset;
-
 	FOnTimelineFloat HandInterpFunction{};
-	
 	FOnTimelineEvent HandTimelineFinished{};
-
 	UFUNCTION()
 	void HandTimelineFloatReturn(float value);
-
 	UFUNCTION()
 	void OnHandTimelineFinished();
 
 	// CAMERA ANIMATION VARIABLES
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
 	UCameraComponent* corvoCam;
-
 	UPROPERTY(EditAnywhere, Category = "Corvo")
 	UCurveFloat* cameraFOVCurve;
-
-	UPROPERTY()
-	float cameraDefaultFOV;
-
-	UPROPERTY()
-	float cameraTeleportFOV;
-
 	FOnTimelineFloat CamFOVInterpFunction{};
-
-	FOnTimelineEvent CamFOVTimelineFinished{};
-
 	UFUNCTION()
 	void CamTimelineFloatReturn(float value);
-
-	UFUNCTION()
-	void OnCamTimelineFinished();
 
 	// HAND MATERIALS
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
 	UMaterial* white;
-
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
 	UMaterial* blue;
+
+	// TELEPORT FUNCTION
+	UFUNCTION()
+	void SetNewLoc(FVector vect1, FVector vect2);
+
 
 private:
 
 	// ANIMATION TIMELINES
 	UTimelineComponent* handBounceTimeline;
+	UTimelineComponent* teleportFOVTimeline;
 
-	UTimelineComponent* cameraFOVTimeline;
+	// HAND POSITIONS
+	FVector handStartPos;
+	FVector handOffsetPos;
+
+	// CAMERA FOVs
+	float cameraDefaultFOV;
+	float cameraTeleportFOV;
+
+	// TELEPORT DELAY TIMER HANDLE
+	FTimerHandle teleportDelayHandle;
 
 protected:
 	// Called when the game starts or when spawned
@@ -88,15 +76,9 @@ protected:
 
 	// CONTROL METHODS
 	void MoveRight(float Val);
-	
 	void MoveForward(float Val);
-
 	void OnInitiateTeleport();
-
 	void OnTeleport();
-
-	// SETS PLAYER LOCATION AFTER TELEPORT
-	void SetNewLoc();
 
 public:	
 	// Called every frame
