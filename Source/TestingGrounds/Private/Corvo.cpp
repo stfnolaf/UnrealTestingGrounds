@@ -99,32 +99,50 @@ void ACorvo::MoveRight(float Value) {
 
 void ACorvo::OnInitiateTeleport() {
 	Hand->SetMaterial(0, blue);
-
-	// TODO  - Add teleportation indicator
+	teleportIndicator->SetVisibility(true, true);
+	teleportIndicatorActive = true;
 }
 
 void ACorvo::OnTeleport() {
 	Hand->SetMaterial(0, white);
+	teleportIndicatorActive = false;
+	teleportIndicator->SetVisibility(false, true);
 	FHitResult hit;
-	if (GetWorld()->LineTraceSingleByChannel(
-			hit, 
-			corvoCam->GetOwner()->GetActorLocation(),
-			corvoCam->GetForwardVector() * 10000.0f + corvoCam->GetOwner()->GetActorLocation(),
-			ECollisionChannel::ECC_Visibility
-		) && cameraFOVCurve
+	TArray<AActor*> list = TArray<AActor*>();
+	list.Add(this);
+	if (UKismetSystemLibrary::SphereTraceSingle(
+			GetWorld(),
+			corvoCam->GetComponentLocation(),
+			corvoCam->GetForwardVector() * maxTeleportDistance + corvoCam->GetComponentLocation(),
+			34.0f,
+			ETraceTypeQuery::TraceTypeQuery1,
+			false,
+			list,
+			EDrawDebugTrace::None,
+			hit,
+			true
+		)
 	) {
-
-		teleportFOVTimeline->PlayFromStart();
-
-		// WAIT 0.15 seconds and then teleport
-		FTimerDelegate teleportTimerDeleg;
-		teleportTimerDeleg.BindUFunction(this, FName("SetNewLoc"), hit.Location, corvoCam->GetOwner()->GetActorLocation());
-		GetWorldTimerManager().SetTimer(teleportDelayHandle, teleportTimerDeleg, 0.125f, false);
+		Teleport(hit.Location);
+	}
+	else {
+		Teleport(corvoCam->GetForwardVector() * maxTeleportDistance + corvoCam->GetComponentLocation());
 	}
 
 }
 
-void ACorvo::SetNewLoc(FVector endVect, FVector startVect)
+void ACorvo::Teleport(FVector teleportLoc) {
+	if (cameraFOVCurve) {
+		teleportFOVTimeline->PlayFromStart();
+
+		// WAIT 0.15 seconds and then teleport
+		FTimerDelegate teleportTimerDeleg;
+		teleportTimerDeleg.BindUFunction(this, FName("SetNewLoc"), teleportLoc, corvoCam->GetOwner()->GetActorLocation());
+		GetWorldTimerManager().SetTimer(teleportDelayHandle, teleportTimerDeleg, 0.125f, false);
+	}
+}
+
+void ACorvo::SetNewLoc(FVector endVect)
 {
 	FLatentActionInfo info;
 	info.CallbackTarget = this;
@@ -134,12 +152,11 @@ void ACorvo::SetNewLoc(FVector endVect, FVector startVect)
 		FRotator(0.0f,0.0f,0.0f), 
 		false, 
 		false, 
-		0.01f, 
+		0.05f, 
 		true,
 		EMoveComponentAction::Move, 
 		info
 	);
-	DrawDebugLine(GetWorld(), startVect, endVect, FColor::Red, false, 5.0f);
 }
 
 // Called every frame
@@ -148,6 +165,30 @@ void ACorvo::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	Hand->AddRelativeRotation(FRotator(0.0f, 0.3f, 0.0f), false, nullptr, ETeleportType::None);
+
+	if (teleportIndicatorActive && teleportIndicator != nullptr) {
+		FHitResult hit;
+		TArray<AActor*> list = TArray<AActor*>();
+		list.Add(this);
+		if (UKismetSystemLibrary::SphereTraceSingle(
+				GetWorld(),
+				corvoCam->GetComponentLocation(),
+				corvoCam->GetForwardVector() * maxTeleportDistance + corvoCam->GetComponentLocation(),
+				34.0f,
+				ETraceTypeQuery::TraceTypeQuery1,
+				false,
+				list,
+				EDrawDebugTrace::None,
+				hit,
+				true
+			)
+		) {
+			teleportIndicator->SetWorldLocation(hit.Location, false, nullptr, ETeleportType::TeleportPhysics);
+		}
+		else {
+			teleportIndicator->SetWorldLocation(corvoCam->GetForwardVector() * maxTeleportDistance + corvoCam->GetComponentLocation(), false, nullptr, ETeleportType::TeleportPhysics);
+		}
+	}
 }
 
 // Called to bind functionality to input

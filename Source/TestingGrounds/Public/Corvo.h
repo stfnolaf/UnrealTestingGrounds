@@ -50,7 +50,13 @@ public:
 
 	// TELEPORT FUNCTION
 	UFUNCTION()
-	void SetNewLoc(FVector vect1, FVector vect2);
+	void SetNewLoc(FVector vect);
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
+	UStaticMeshComponent* teleportIndicator = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
+	float maxTeleportDistance;
 
 
 private:
@@ -70,6 +76,8 @@ private:
 	// TELEPORT DELAY TIMER HANDLE
 	FTimerHandle teleportDelayHandle;
 
+	bool teleportIndicatorActive = false;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -79,6 +87,7 @@ protected:
 	void MoveForward(float Val);
 	void OnInitiateTeleport();
 	void OnTeleport();
+	void Teleport(FVector teleportLoc);
 
 public:	
 	// Called every frame
