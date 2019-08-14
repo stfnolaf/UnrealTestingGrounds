@@ -54,6 +54,8 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
 	UStaticMeshComponent* teleportIndicator = nullptr;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
+	UStaticMeshComponent* climbIndicator = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
 	float maxTeleportDistance;
@@ -77,6 +79,8 @@ private:
 	FTimerHandle teleportDelayHandle;
 
 	bool teleportIndicatorActive = false;
+
+	bool HandleWallClimbing(FHitResult hit, bool isTeleporting);
 
 protected:
 	// Called when the game starts or when spawned

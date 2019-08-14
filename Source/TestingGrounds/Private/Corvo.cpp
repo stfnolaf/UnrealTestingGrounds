@@ -46,6 +46,97 @@ void ACorvo::CamTimelineFloatReturn(float value)
 	corvoCam->SetFieldOfView(FMath::Lerp(cameraDefaultFOV, cameraTeleportFOV, value));
 }
 
+bool ACorvo::HandleWallClimbing(FHitResult hit, bool isTeleporting)
+{
+	// IF THE STRUCK PART OF THE WALL IS VERTICAL
+	if (hit.ImpactNormal.Z > 0.1f) {
+		if (isTeleporting) {
+			UE_LOG(LogTemp, Warning, TEXT("Surface not vertical"));
+			Teleport(hit.Location);
+		}
+		return false;
+	}
+
+	// TODO - set these based on capsule collider
+	float collisionCheckRadius = 34.0f;
+	float collisionCheckHalfHeight = 88.0f;
+
+	// Draw vector down to find top of wall
+	FVector directionInsideWall = hit.ImpactNormal;
+	directionInsideWall.Normalize(0.0001f);
+	directionInsideWall = directionInsideWall * (-1.25f * collisionCheckRadius);
+	FVector scaleTraceEnd = directionInsideWall + hit.ImpactPoint;
+	FVector scaleTraceStart = scaleTraceEnd + FVector(0.0f, 0.0f, collisionCheckHalfHeight * 2.0f);
+	FHitResult wallTopSurfaceHit;
+	// If it hits something we've found the top of the wall
+	if (GetWorld()->LineTraceSingleByChannel(wallTopSurfaceHit, scaleTraceStart, scaleTraceEnd, ECollisionChannel::ECC_Visibility)) {
+		// make sure we can stand on the surface
+		if (!wallTopSurfaceHit.bBlockingHit) {
+			if (isTeleporting) {
+				UE_LOG(LogTemp, Warning, TEXT("Teleport failed.  Surface too small."));
+				Teleport(hit.Location);
+			}
+			return false;
+		}
+
+		// Make sure our character can reach the top of the wall
+		if (wallTopSurfaceHit.ImpactPoint.Z - wallTopSurfaceHit.TraceEnd.Z > collisionCheckHalfHeight) {
+			if (isTeleporting) {
+				UE_LOG(LogTemp, Warning, TEXT("Teleport failed.  Wall top not in reachable distance %f"), (wallTopSurfaceHit.ImpactPoint.Z - wallTopSurfaceHit.TraceEnd.Z));
+				Teleport(hit.Location);
+			}
+			return false;
+		}
+
+		// Run a sphere trace on top of the wall.  If we get a blocking hit, we can't go there.
+		TArray<AActor*> list = TArray<AActor*>();
+		list.Add(this);
+		FHitResult heightTestHit;
+		if (UKismetSystemLibrary::SphereTraceSingle(
+			GetWorld(),
+			wallTopSurfaceHit.ImpactPoint + FVector(0.0f, 0.0f, collisionCheckRadius + 1.0f),
+			wallTopSurfaceHit.ImpactPoint + FVector(0.0f, 0.0f, (collisionCheckHalfHeight - collisionCheckRadius) * 2.0f),
+			collisionCheckRadius,
+			ETraceTypeQuery::TraceTypeQuery1,
+			false,
+			list,
+			EDrawDebugTrace::None,
+			heightTestHit,
+			true) && heightTestHit.bBlockingHit
+		) {
+			if (isTeleporting) {
+				UE_LOG(LogTemp, Warning, TEXT("Teleport failed.  Insufficient room on top of wall."));
+				Teleport(hit.Location);
+			}
+			return false;
+		}
+		// if we don't get a blocking hit, we can go there.
+		else if (!heightTestHit.bBlockingHit) {
+			if (isTeleporting) {
+				UE_LOG(LogTemp, Warning, TEXT("AAAAAAAAAAAAA"));
+				Teleport(wallTopSurfaceHit.ImpactPoint + FVector(0.0f, 0.0f, collisionCheckHalfHeight));
+			}
+			return true;
+		}
+		// Not even sure how to reach this tbh
+		else {
+			if (isTeleporting) {
+				UE_LOG(LogTemp, Warning, TEXT("IDK"));
+				Teleport(hit.Location);
+			}
+			return true;
+		}
+	}
+	// This means the initial line trace didn't find the top of the wall.  I suspect this means the line trace is coming up short of the surface.
+	else {
+		if (isTeleporting) {
+			UE_LOG(LogTemp, Warning, TEXT("Top of wall not found"));
+			Teleport(hit.Location);
+		}
+		return false;
+	}
+}
+
 // Called when the game starts or when spawned
 void ACorvo::BeginPlay()
 {
@@ -123,7 +214,13 @@ void ACorvo::OnTeleport() {
 			true
 		)
 	) {
-		Teleport(hit.Location);
+		// IF WE HIT A WALL
+		if (hit.Actor->ActorHasTag("Wall")) {
+			HandleWallClimbing(hit, true);
+		}
+		else {
+			Teleport(hit.Location);
+		}
 	}
 	else {
 		Teleport(corvoCam->GetForwardVector() * maxTeleportDistance + corvoCam->GetComponentLocation());
@@ -138,7 +235,7 @@ void ACorvo::Teleport(FVector teleportLoc) {
 		// WAIT 0.15 seconds and then teleport
 		FTimerDelegate teleportTimerDeleg;
 		teleportTimerDeleg.BindUFunction(this, FName("SetNewLoc"), teleportLoc, corvoCam->GetOwner()->GetActorLocation());
-		GetWorldTimerManager().SetTimer(teleportDelayHandle, teleportTimerDeleg, 0.125f, false);
+		GetWorldTimerManager().SetTimer(teleportDelayHandle, teleportTimerDeleg, 0.12f, false);
 	}
 }
 
@@ -166,6 +263,8 @@ void ACorvo::Tick(float DeltaTime)
 
 	Hand->AddRelativeRotation(FRotator(0.0f, 0.3f, 0.0f), false, nullptr, ETeleportType::None);
 
+	climbIndicator->SetVisibility(false, true);
+
 	if (teleportIndicatorActive && teleportIndicator != nullptr) {
 		FHitResult hit;
 		TArray<AActor*> list = TArray<AActor*>();
@@ -183,6 +282,9 @@ void ACorvo::Tick(float DeltaTime)
 				true
 			)
 		) {
+			if (hit.Actor->ActorHasTag("Wall")) {
+				climbIndicator->SetVisibility(HandleWallClimbing(hit, false), true);
+			}
 			teleportIndicator->SetWorldLocation(hit.Location, false, nullptr, ETeleportType::TeleportPhysics);
 		}
 		else {
