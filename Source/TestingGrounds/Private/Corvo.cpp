@@ -7,6 +7,7 @@
 #include "Runtime/Engine/Public/DrawDebugHelpers.h"
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
+#include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
 
 // Sets default values
 ACorvo::ACorvo()
@@ -14,61 +15,91 @@ ACorvo::ACorvo()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// SET UP HAND BOUNCE TIMELINE
+	// set up animation timelines for effects
 	handBounceTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Hand Bounce Timeline"));
-
-	// SET UP DELEGATES FOR HAND BOUNCE MOVEMENT
 	HandInterpFunction.BindUFunction(this, FName("HandTimelineFloatReturn"));
 	HandTimelineFinished.BindUFunction(this, FName("OnHandTimelineFinished"));
-
-	// SET UP TELEPORTATION FOV TIMELINE
 	teleportFOVTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Teleport FOV Timeline"));
-
-	// SET UP DELEGATES FOR CAMERA FOV
 	CamFOVInterpFunction.BindUFunction(this, FName("CamTimelineFloatReturn"));
-}
+} // end of constructor
 
+// Called when the game starts or when spawned
+void ACorvo::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// If we have a curve for the hand animation, set it up
+	if (handBounceCurve) {
+		handBounceTimeline->AddInterpFloat(handBounceCurve, HandInterpFunction, FName("Alpha"));
+		handBounceTimeline->SetTimelineFinishedFunc(HandTimelineFinished);
+
+		handStartPos = Hand->RelativeLocation;
+		handOffsetPos = FVector(handStartPos.X, handStartPos.Y, handStartPos.Z + handZOffset);
+
+		handBounceTimeline->SetLooping(false);
+		handBounceTimeline->SetIgnoreTimeDilation(false);
+
+		handBounceTimeline->Play();
+	}
+
+	// If we have a curve for the fov animation, set it up
+	if (cameraFOVCurve) {
+		teleportFOVTimeline->AddInterpFloat(cameraFOVCurve, CamFOVInterpFunction, FName("Alpha"));
+
+		cameraDefaultFOV = 106.0f;
+		cameraTeleportFOV = cameraDefaultFOV + 20.0f;
+
+		teleportFOVTimeline->SetLooping(false);
+		teleportFOVTimeline->SetIgnoreTimeDilation(false);
+	}
+
+	if (capsule != nullptr) {
+		collisionCheckRadius = capsule->GetScaledCapsuleRadius();
+		collisionCheckHalfHeight = capsule->GetScaledCapsuleHalfHeight();
+	}
+} // end of BeginPlay()
+
+// Hand timeline value is passed in via float
 void ACorvo::HandTimelineFloatReturn(float value)
 {
 	Hand->SetRelativeLocation(FMath::Lerp(handStartPos, handOffsetPos, value), false, nullptr, ETeleportType::None);
-}
+} // end of HandTimelineFloatReturn()
 
+// Called when the hand timeline finishes playing
 void ACorvo::OnHandTimelineFinished()
 {
 	if (handBounceTimeline->GetPlaybackPosition() == 0.0f)
 		handBounceTimeline->Play();
 	else
 		handBounceTimeline->Reverse();
-}
+} // end of OnHandTimelineFinished()
 
+// cam timeline value is passed in via float
 void ACorvo::CamTimelineFloatReturn(float value)
 {
 	corvoCam->SetFieldOfView(FMath::Lerp(cameraDefaultFOV, cameraTeleportFOV, value));
-}
+} // end of CamTimelineFloatReturn
 
+// Handle wall climbing and return whether we climbed
 bool ACorvo::HandleWallClimbing(FHitResult hit, bool isTeleporting)
 {
-	// IF THE STRUCK PART OF THE WALL IS VERTICAL
+	// Cannot climb if wall isn't vertical
 	if (hit.ImpactNormal.Z > 0.1f) {
 		if (isTeleporting) {
-			UE_LOG(LogTemp, Warning, TEXT("Surface not vertical"));
+			//UE_LOG(LogTemp, Warning, TEXT("Surface not vertical"));
 			Teleport(hit.Location);
 		}
 		return false;
 	}
 
-	// TODO - set these based on capsule collider
-	float collisionCheckRadius = 34.0f;
-	float collisionCheckHalfHeight = 88.0f;
-
-	// Draw vector down to find top of wall
+	// STEP 1: FIND THE TOP OF THE WALL
+	// Draw vector from above the wall downward to hit the top of the wall
 	FVector directionInsideWall = hit.ImpactNormal;
 	directionInsideWall.Normalize(0.0001f);
 	directionInsideWall = directionInsideWall * (-1.25f * collisionCheckRadius);
 	FVector scaleTraceEnd = directionInsideWall + hit.ImpactPoint;
 	FVector scaleTraceStart = scaleTraceEnd + FVector(0.0f, 0.0f, collisionCheckHalfHeight * 2.0f);
 	FHitResult wallTopSurfaceHit;
-	// If it hits something we've found the top of the wall
 	if (GetWorld()->LineTraceSingleByChannel(wallTopSurfaceHit, scaleTraceStart, scaleTraceEnd, ECollisionChannel::ECC_Visibility)) {
 		// make sure we can stand on the surface
 		if (!wallTopSurfaceHit.bBlockingHit) {
@@ -88,6 +119,7 @@ bool ACorvo::HandleWallClimbing(FHitResult hit, bool isTeleporting)
 			return false;
 		}
 
+		// STEP 2: ENSURE WE HAVE AMPLE SPACE ON TOP OF THE WALL
 		// Run a sphere trace on top of the wall.  If we get a blocking hit, we can't go there.
 		TArray<AActor*> list = TArray<AActor*>();
 		list.Add(this);
@@ -110,6 +142,7 @@ bool ACorvo::HandleWallClimbing(FHitResult hit, bool isTeleporting)
 			}
 			return false;
 		}
+		// STEP 3: TELEPORT
 		// if we don't get a blocking hit, we can go there.
 		else if (!heightTestHit.bBlockingHit) {
 			if (isTeleporting) {
@@ -118,7 +151,7 @@ bool ACorvo::HandleWallClimbing(FHitResult hit, bool isTeleporting)
 			}
 			return true;
 		}
-		// Not even sure how to reach this tbh
+		// This means we didn't hit anything with our trace.  I don't believe this should ever be reached.
 		else {
 			if (isTeleporting) {
 				UE_LOG(LogTemp, Warning, TEXT("IDK"));
@@ -127,7 +160,8 @@ bool ACorvo::HandleWallClimbing(FHitResult hit, bool isTeleporting)
 			return true;
 		}
 	}
-	// This means the initial line trace didn't find the top of the wall.  I suspect this means the line trace is coming up short of the surface.
+	// BUG: This shouldn't be reached.  This means the initial line trace didn't find the top of the wall.
+	// I suspect the line trace is coming up short of the surface sometimes.
 	else {
 		if (isTeleporting) {
 			UE_LOG(LogTemp, Warning, TEXT("Top of wall not found"));
@@ -135,65 +169,16 @@ bool ACorvo::HandleWallClimbing(FHitResult hit, bool isTeleporting)
 		}
 		return false;
 	}
-}
+} // end of HandleWallClimbing()
 
-// Called when the game starts or when spawned
-void ACorvo::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// IF WE HAVE A CURVE
-	if (handBounceCurve) {
-		// SET CALL HandInterpFunction WITH handBounceCurve AS VALUES WHILE RUNNING TIMELINE
-		handBounceTimeline->AddInterpFloat(handBounceCurve, HandInterpFunction, FName("Alpha"));
-		// ON TIMELINE FINISHED CALL HandTimelineFinished DELEGATE
-		handBounceTimeline->SetTimelineFinishedFunc(HandTimelineFinished);
-
-		// SET UP HAND START AND END POSITIONS
-		handStartPos = Hand->RelativeLocation;
-		handOffsetPos = FVector(handStartPos.X, handStartPos.Y, handStartPos.Z + handZOffset);
-
-		// OTHER TIMELINE PROPERTIES
-		handBounceTimeline->SetLooping(false);
-		handBounceTimeline->SetIgnoreTimeDilation(false);
-
-		// LET THIS TIMELINE LOOP AND REVERSE ENDLESSLY
-		handBounceTimeline->Play();
-	}
-
-	// IF WE HAVE A CAMERA FOV CURVE
-	if (cameraFOVCurve) {
-		// SET CALL CamFOVInterpFunction WITH cameraFOVCurve AS VALUES WHILE RUNNINE TIMELINE
-		teleportFOVTimeline->AddInterpFloat(cameraFOVCurve, CamFOVInterpFunction, FName("Alpha"));
-
-		// SET UP FOV START AND END VALUES
-		cameraDefaultFOV = 106.0f;
-		cameraTeleportFOV = cameraDefaultFOV + 20.0f;
-
-		// OTHER TIMELINE PROPERTIES
-		teleportFOVTimeline->SetLooping(false);
-		teleportFOVTimeline->SetIgnoreTimeDilation(false);
-	}
-}
-
-void ACorvo::MoveForward(float Value) {
-	if (Value != 0.0f) {
-		AddMovementInput(GetActorForwardVector(), Value);
-	}
-}
-
-void ACorvo::MoveRight(float Value) {
-	if (Value != 0.0f) {
-		AddMovementInput(GetActorRightVector(), Value);
-	}
-}
-
+// Called when right mouse is held down
 void ACorvo::OnInitiateTeleport() {
 	Hand->SetMaterial(0, blue);
 	teleportIndicator->SetVisibility(true, true);
 	teleportIndicatorActive = true;
-}
+} // end of OnInitiateTeleport()
 
+// called when right mouse is released
 void ACorvo::OnTeleport() {
 	Hand->SetMaterial(0, white);
 	teleportIndicatorActive = false;
@@ -202,19 +187,18 @@ void ACorvo::OnTeleport() {
 	TArray<AActor*> list = TArray<AActor*>();
 	list.Add(this);
 	if (UKismetSystemLibrary::SphereTraceSingle(
-			GetWorld(),
-			corvoCam->GetComponentLocation(),
-			corvoCam->GetForwardVector() * maxTeleportDistance + corvoCam->GetComponentLocation(),
-			34.0f,
-			ETraceTypeQuery::TraceTypeQuery1,
-			false,
-			list,
-			EDrawDebugTrace::None,
-			hit,
-			true
-		)
-	) {
-		// IF WE HIT A WALL
+		GetWorld(),
+		corvoCam->GetComponentLocation(),
+		corvoCam->GetForwardVector() * maxTeleportDistance + corvoCam->GetComponentLocation(),
+		34.0f,
+		ETraceTypeQuery::TraceTypeQuery1,
+		false,
+		list,
+		EDrawDebugTrace::None,
+		hit,
+		true
+	)
+		) {
 		if (hit.Actor->ActorHasTag("Wall")) {
 			HandleWallClimbing(hit, true);
 		}
@@ -237,24 +221,36 @@ void ACorvo::Teleport(FVector teleportLoc) {
 		teleportTimerDeleg.BindUFunction(this, FName("SetNewLoc"), teleportLoc, corvoCam->GetOwner()->GetActorLocation());
 		GetWorldTimerManager().SetTimer(teleportDelayHandle, teleportTimerDeleg, 0.12f, false);
 	}
-}
+} // end of Teleport()
 
 void ACorvo::SetNewLoc(FVector endVect)
 {
 	FLatentActionInfo info;
 	info.CallbackTarget = this;
 	UKismetSystemLibrary::MoveComponentTo(
-		GetRootComponent(), 
-		endVect, 
-		FRotator(0.0f,0.0f,0.0f), 
-		false, 
-		false, 
-		0.05f, 
+		GetRootComponent(),
+		endVect,
+		FRotator(0.0f, 0.0f, 0.0f),
+		false,
+		false,
+		0.05f,
 		true,
-		EMoveComponentAction::Move, 
+		EMoveComponentAction::Move,
 		info
 	);
-}
+} // end of SetNewLoc()
+
+void ACorvo::MoveForward(float Value) {
+	if (Value != 0.0f) {
+		AddMovementInput(GetActorForwardVector(), Value);
+	}
+} // end of MoveForward()
+
+void ACorvo::MoveRight(float Value) {
+	if (Value != 0.0f) {
+		AddMovementInput(GetActorRightVector(), Value);
+	}
+} // end of MoveRight()
 
 // Called every frame
 void ACorvo::Tick(float DeltaTime)
@@ -265,6 +261,7 @@ void ACorvo::Tick(float DeltaTime)
 
 	climbIndicator->SetVisibility(false, true);
 
+	// handle indicator updates
 	if (teleportIndicatorActive && teleportIndicator != nullptr) {
 		FHitResult hit;
 		TArray<AActor*> list = TArray<AActor*>();

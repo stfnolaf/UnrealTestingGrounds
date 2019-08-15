@@ -22,6 +22,8 @@ public:
 	// HAND ANIMATION VARIABLES
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
 	UStaticMeshComponent* Hand = nullptr;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
+	UCapsuleComponent* capsule = nullptr;
 	UPROPERTY(EditAnywhere, Category = "Corvo")
 	UCurveFloat* handBounceCurve;
 	UPROPERTY(EditAnywhere, Category = "Corvo")
@@ -81,6 +83,9 @@ private:
 	bool teleportIndicatorActive = false;
 
 	bool HandleWallClimbing(FHitResult hit, bool isTeleporting);
+
+	float collisionCheckRadius = 34.0f;
+	float collisionCheckHalfHeight = 88.0f;
 
 protected:
 	// Called when the game starts or when spawned
