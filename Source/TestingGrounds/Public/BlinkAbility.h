@@ -98,6 +98,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Corvo")
 		float collisionCheckHalfHeight = 88.0f;
 
+	UPROPERTY(EditAnywhere, Category = "Corvo")
+		float sphereTraceRadius = 34.0f;
+
 	UStaticMeshComponent* Hand = nullptr;
 
 public:	

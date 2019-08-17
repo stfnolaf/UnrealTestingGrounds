@@ -116,7 +116,10 @@ bool UBlinkAbility::HandleWallClimbing(FHitResult hit, bool isTeleporting)
 	directionInsideWall = directionInsideWall * (-1.25f * collisionCheckRadius);
 	FVector scaleTraceEnd = directionInsideWall + hit.ImpactPoint;
 	FVector scaleTraceStart = scaleTraceEnd + FVector(0.0f, 0.0f, collisionCheckHalfHeight * 2.0f);
+	scaleTraceEnd += FVector(0.0f, 0.0f, -1.0f);
 	FHitResult wallTopSurfaceHit;
+	//DrawDebugLine(GetWorld(), scaleTraceStart, scaleTraceEnd, FColor::Red, false, 10.0f, (uint8)'\000', 2.0f);
+	//UE_LOG(LogTemp, Warning, TEXT("DEBUG LINE ENDS AT %s"), *scaleTraceEnd.ToString());
 	if (GetWorld()->LineTraceSingleByChannel(wallTopSurfaceHit, scaleTraceStart, scaleTraceEnd, ECollisionChannel::ECC_Visibility)) {
 		// make sure we can stand on the surface
 		if (!wallTopSurfaceHit.bBlockingHit) {
@@ -128,7 +131,7 @@ bool UBlinkAbility::HandleWallClimbing(FHitResult hit, bool isTeleporting)
 		}
 
 		// Make sure our character can reach the top of the wall
-		if (wallTopSurfaceHit.ImpactPoint.Z - wallTopSurfaceHit.TraceEnd.Z > collisionCheckHalfHeight) {
+		if (wallTopSurfaceHit.ImpactPoint.Z - wallTopSurfaceHit.TraceEnd.Z > collisionCheckRadius) {
 			if (isTeleporting) {
 				UE_LOG(LogTemp, Warning, TEXT("Teleport failed.  Wall top not in reachable distance %f"), (wallTopSurfaceHit.ImpactPoint.Z - wallTopSurfaceHit.TraceEnd.Z));
 				Teleport(hit.Location);
@@ -239,7 +242,7 @@ void UBlinkAbility::OnReleaseAbility() {
 		GetWorld(),
 		corvoCam->GetComponentLocation(),
 		corvoCam->GetForwardVector() * maxTeleportDistance + corvoCam->GetComponentLocation(),
-		34.0f,
+		sphereTraceRadius,
 		ETraceTypeQuery::TraceTypeQuery1,
 		false,
 		list,
@@ -281,7 +284,7 @@ void UBlinkAbility::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 			GetWorld(),
 			corvoCam->GetComponentLocation(),
 			corvoCam->GetForwardVector() * maxTeleportDistance + corvoCam->GetComponentLocation(),
-			34.0f,
+			sphereTraceRadius,
 			ETraceTypeQuery::TraceTypeQuery1,
 			false,
 			list,
