@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "BlinkAbility.h"
 #include "Corvo.generated.h"
 
 UCLASS()
@@ -16,6 +17,13 @@ public:
 	ACorvo();
 
 protected:
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
+	UStaticMeshComponent* Hand = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
+	UCameraComponent* myCamera = nullptr;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -24,6 +32,11 @@ protected:
 	void MoveForward(float Val);
 	void OnInitiateAbility();
 	void OnReleaseAbility();
+	void OnQuit();
+
+	TArray<UBlinkAbility*> abilities;
+
+	int activeAbility = 0;
 
 public:	
 	// Called every frame
@@ -31,5 +44,9 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UStaticMeshComponent* GetHand();
+
+	UCameraComponent* GetCamera();
 
 };

@@ -2,6 +2,8 @@
 
 
 #include "Corvo.h"
+#include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
+#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 
 // Sets default values
 ACorvo::ACorvo()
@@ -14,6 +16,8 @@ ACorvo::ACorvo()
 void ACorvo::BeginPlay()
 {
 	Super::BeginPlay();
+
+	GetComponents(abilities);
 } // end of BeginPlay()
 
 void ACorvo::MoveForward(float Value) {
@@ -24,10 +28,19 @@ void ACorvo::MoveForward(float Value) {
 
 void ACorvo::OnInitiateAbility()
 {
+	if(activeAbility < abilities.Num())
+		abilities[activeAbility]->OnInitiateAbility();
 }
 
 void ACorvo::OnReleaseAbility()
 {
+	if(activeAbility < abilities.Num())
+		abilities[activeAbility]->OnReleaseAbility();
+}
+
+void ACorvo::OnQuit()
+{
+	UKismetSystemLibrary::QuitGame(GetWorld(), UGameplayStatics::GetPlayerController(GetWorld(), 0), EQuitPreference::Quit, false);
 }
 
 void ACorvo::MoveRight(float Value) {
@@ -64,5 +77,15 @@ void ACorvo::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Teleport", IE_Pressed, this, &ACorvo::OnInitiateAbility);
 	PlayerInputComponent->BindAction("Teleport", IE_Released, this, &ACorvo::OnReleaseAbility);
 
+	PlayerInputComponent->BindAction("Quit", IE_Pressed, this, &ACorvo::OnQuit);
+
+}
+
+UStaticMeshComponent* ACorvo::GetHand() {
+	return Hand;
+}
+
+UCameraComponent* ACorvo::GetCamera() {
+	return myCamera;
 }
 

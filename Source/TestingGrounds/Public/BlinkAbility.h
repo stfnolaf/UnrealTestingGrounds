@@ -8,11 +8,11 @@
 #include "Runtime/Engine/Classes/Curves/CurveFloat.h"
 #include "Runtime/Engine/Classes/Materials/Material.h"
 #include "Runtime/Engine/Classes/Camera/CameraComponent.h"
-#include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
+#include "BlinkIndicator.h"
 #include "BlinkAbility.generated.h"
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS( Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class TESTINGGROUNDS_API UBlinkAbility : public UActorComponent
 {
 	GENERATED_BODY()
@@ -22,14 +22,10 @@ public:
 	UBlinkAbility();
 
 	// HAND ANIMATION VARIABLES
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
-	UStaticMeshComponent* Hand = nullptr;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
-	UCapsuleComponent* capsule = nullptr;
 	UPROPERTY(EditAnywhere, Category = "Corvo")
 	UCurveFloat* handBounceCurve;
 	UPROPERTY(EditAnywhere, Category = "Corvo")
-	float handZOffset;
+	float handZOffset = 5.0f;
 	FOnTimelineFloat HandInterpFunction{};
 	FOnTimelineEvent HandTimelineFinished{};
 	UFUNCTION()
@@ -38,8 +34,6 @@ public:
 	void OnHandTimelineFinished();
 
 	// CAMERA ANIMATION VARIABLES
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
-	UCameraComponent* corvoCam;
 	UPROPERTY(EditAnywhere, Category = "Corvo")
 	UCurveFloat* cameraFOVCurve;
 	FOnTimelineFloat CamFOVInterpFunction{};
@@ -57,15 +51,16 @@ public:
 	void SetNewLoc(FVector vect);
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
-	UStaticMeshComponent* teleportIndicator = nullptr;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
-	UStaticMeshComponent* climbIndicator = nullptr;
+	float maxTeleportDistance = 2700.0f;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
-	float maxTeleportDistance;
+	float teleportTime = 0.05f;
 
-	void OnInitiateTeleport();
-	void OnTeleport();
+	void OnInitiateAbility();
+	void OnReleaseAbility();
+
+	UPROPERTY(EditAnywhere, Category = "Corvo")
+	TSubclassOf<class ABlinkIndicator> blinkMarker;
 
 private:
 	// ANIMATION TIMELINES
@@ -87,14 +82,23 @@ private:
 
 	bool HandleWallClimbing(FHitResult hit, bool isTeleporting);
 
-	float collisionCheckRadius = 34.0f;
-	float collisionCheckHalfHeight = 88.0f;
-
 	void Teleport(FVector teleportLoc);
+
+	ABlinkIndicator* blinkIndicator = nullptr;
+
+	UCameraComponent* corvoCam = nullptr;
+
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere, Category = "Corvo")
+		float collisionCheckRadius = 34.0f;
+	UPROPERTY(EditAnywhere, Category = "Corvo")
+		float collisionCheckHalfHeight = 88.0f;
+
+	UStaticMeshComponent* Hand = nullptr;
 
 public:	
 	// Called every frame

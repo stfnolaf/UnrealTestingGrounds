@@ -6,7 +6,9 @@
 #include "Runtime/Engine/Public/TimerManager.h"
 #include "Runtime/Engine/Public/DrawDebugHelpers.h"
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
+#include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
+#include "Corvo.h"
 
 // Sets default values for this component's properties
 UBlinkAbility::UBlinkAbility()
@@ -29,13 +31,31 @@ void UBlinkAbility::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (blinkMarker) {
+		FActorSpawnParameters spawnParams;
+		spawnParams.Owner = GetOwner();
+		blinkIndicator = GetWorld()->SpawnActor<ABlinkIndicator>(blinkMarker, FVector(GetWorld()->OriginLocation), FRotator(0.0f, 0.0f, 0.0f), spawnParams);
+	}
+
 	// If we have a curve for the hand animation, set it up
 	if (handBounceCurve) {
 		handBounceTimeline->AddInterpFloat(handBounceCurve, HandInterpFunction, FName("Alpha"));
 		handBounceTimeline->SetTimelineFinishedFunc(HandTimelineFinished);
 
-		handStartPos = Hand->RelativeLocation;
-		handOffsetPos = FVector(handStartPos.X, handStartPos.Y, handStartPos.Z + handZOffset);
+		ACorvo* corvo = Cast<ACorvo>(GetOwner());
+		if (corvo) {
+			Hand = corvo->GetHand();
+			corvoCam = corvo->GetCamera();
+		}
+
+		if (corvoCam == nullptr) {
+			UE_LOG(LogTemp, Warning, TEXT("CAMERA NO LINKED PROPERLY"));
+		}
+
+		if (Hand != nullptr) {
+			handStartPos = Hand->RelativeLocation;
+			handOffsetPos = FVector(handStartPos.X, handStartPos.Y, handStartPos.Z + handZOffset);
+		}
 
 		handBounceTimeline->SetLooping(false);
 		handBounceTimeline->SetIgnoreTimeDilation(false);
@@ -53,17 +73,13 @@ void UBlinkAbility::BeginPlay()
 		teleportFOVTimeline->SetLooping(false);
 		teleportFOVTimeline->SetIgnoreTimeDilation(false);
 	}
-
-	if (capsule != nullptr) {
-		collisionCheckRadius = capsule->GetScaledCapsuleRadius();
-		collisionCheckHalfHeight = capsule->GetScaledCapsuleHalfHeight();
-	}
 } // end of BeginPlay()
 
 // Hand timeline value is passed in via float
 void UBlinkAbility::HandTimelineFloatReturn(float value)
 {
-	Hand->SetRelativeLocation(FMath::Lerp(handStartPos, handOffsetPos, value), false, nullptr, ETeleportType::None);
+	if(Hand != nullptr)
+		Hand->SetRelativeLocation(FMath::Lerp(handStartPos, handOffsetPos, value), false, nullptr, ETeleportType::None);
 } // end of HandTimelineFloatReturn()
 
 // Called when the hand timeline finishes playing
@@ -147,7 +163,6 @@ bool UBlinkAbility::HandleWallClimbing(FHitResult hit, bool isTeleporting)
 		// if we don't get a blocking hit, we can go there.
 		else if (!heightTestHit.bBlockingHit) {
 			if (isTeleporting) {
-				UE_LOG(LogTemp, Warning, TEXT("AAAAAAAAAAAAA"));
 				Teleport(wallTopSurfaceHit.ImpactPoint + FVector(0.0f, 0.0f, collisionCheckHalfHeight));
 			}
 			return true;
@@ -178,7 +193,7 @@ void UBlinkAbility::Teleport(FVector teleportLoc) {
 
 		// WAIT 0.15 seconds and then teleport
 		FTimerDelegate teleportTimerDeleg;
-		teleportTimerDeleg.BindUFunction(this, FName("SetNewLoc"), teleportLoc, corvoCam->GetOwner()->GetActorLocation());
+		teleportTimerDeleg.BindUFunction(this, FName("SetNewLoc"), teleportLoc);
 		GetOwner()->GetWorldTimerManager().SetTimer(teleportDelayHandle, teleportTimerDeleg, 0.12f, false);
 	}
 } // end of Teleport()
@@ -190,10 +205,10 @@ void UBlinkAbility::SetNewLoc(FVector endVect)
 	UKismetSystemLibrary::MoveComponentTo(
 		this->GetOwner()->GetRootComponent(),
 		endVect,
-		FRotator(0.0f, 0.0f, 0.0f),
+		this->GetOwner()->GetActorRotation(),
 		false,
 		false,
-		0.05f,
+		teleportTime,
 		true,
 		EMoveComponentAction::Move,
 		info
@@ -201,17 +216,22 @@ void UBlinkAbility::SetNewLoc(FVector endVect)
 } // end of SetNewLoc()
 
 // Called when right mouse is held down
-void UBlinkAbility::OnInitiateTeleport() {
-	Hand->SetMaterial(0, blue);
-	teleportIndicator->SetVisibility(true, true);
-	teleportIndicatorActive = true;
+void UBlinkAbility::OnInitiateAbility() {
+	if(Hand != nullptr)
+		Hand->SetMaterial(0, blue);
+	if (blinkIndicator != nullptr) {
+		blinkIndicator->SetIndicatorVisibility(true);
+		teleportIndicatorActive = true;
+	}
 } // end of OnInitiateTeleport()
 
 // called when right mouse is released
-void UBlinkAbility::OnTeleport() {
-	Hand->SetMaterial(0, white);
+void UBlinkAbility::OnReleaseAbility() {
+	if (Hand != nullptr)
+		Hand->SetMaterial(0, white);
 	teleportIndicatorActive = false;
-	teleportIndicator->SetVisibility(false, true);
+	if (blinkIndicator != nullptr)
+		blinkIndicator->SetIndicatorVisibility(false);
 	FHitResult hit;
 	TArray<AActor*> list = TArray<AActor*>();
 	list.Add(this->GetOwner());
@@ -249,11 +269,11 @@ void UBlinkAbility::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 	if(Hand != nullptr)
 		Hand->AddRelativeRotation(FRotator(0.0f, 0.3f, 0.0f), false, nullptr, ETeleportType::None);
 
-	if(climbIndicator != nullptr)
-		climbIndicator->SetVisibility(false, true);
+	if(blinkIndicator != nullptr)
+		blinkIndicator->SetClimbVisibility(false);
 
 	// handle indicator updates
-	if (teleportIndicatorActive && teleportIndicator != nullptr) {
+	if (teleportIndicatorActive && blinkIndicator != nullptr) {
 		FHitResult hit;
 		TArray<AActor*> list = TArray<AActor*>();
 		list.Add(this->GetOwner());
@@ -271,12 +291,12 @@ void UBlinkAbility::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 		)
 			) {
 			if (hit.Actor->ActorHasTag("Wall")) {
-				climbIndicator->SetVisibility(HandleWallClimbing(hit, false), true);
+				blinkIndicator->SetClimbVisibility(HandleWallClimbing(hit, false));
 			}
-			teleportIndicator->SetWorldLocation(hit.Location, false, nullptr, ETeleportType::TeleportPhysics);
+			blinkIndicator->SetActorLocation(hit.Location, false, nullptr, ETeleportType::TeleportPhysics);
 		}
 		else {
-			teleportIndicator->SetWorldLocation(corvoCam->GetForwardVector() * maxTeleportDistance + corvoCam->GetComponentLocation(), false, nullptr, ETeleportType::TeleportPhysics);
+			blinkIndicator->SetActorLocation(corvoCam->GetForwardVector() * maxTeleportDistance + corvoCam->GetComponentLocation(), false, nullptr, ETeleportType::TeleportPhysics);
 		}
 	}
 
