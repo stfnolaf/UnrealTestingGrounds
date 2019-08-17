@@ -71,10 +71,6 @@ private:
 	FVector handStartPos;
 	FVector handOffsetPos;
 
-	// CAMERA FOVs
-	float cameraDefaultFOV;
-	float cameraTeleportFOV;
-
 	// TELEPORT DELAY TIMER HANDLE
 	FTimerHandle teleportDelayHandle;
 
@@ -100,6 +96,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Corvo")
 		float sphereTraceRadius = 34.0f;
+
+	// CAMERA FOVs
+	UPROPERTY(EditAnywhere, Category = "Corvo")
+	float cameraDefaultFOV = 106.0f;
+	UPROPERTY(EditAnywhere, Category = "Corvo")
+	float cameraTeleportFOV = 130.0f;
 
 	UStaticMeshComponent* Hand = nullptr;
 
