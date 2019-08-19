@@ -64,7 +64,7 @@ void ACorvo::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	check(PlayerInputComponent);
 
 	// Bind jump events
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACorvo::MyJump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	// Bind movement events
@@ -87,5 +87,17 @@ UStaticMeshComponent* ACorvo::GetHand() {
 
 UCameraComponent* ACorvo::GetCamera() {
 	return myCamera;
+}
+
+void ACorvo::MyJump() {
+	if (numJumps == 0 || numJumps == 1) {
+		numJumps++;
+		this->LaunchCharacter(FVector(0.0f, 0.0f, 420.0f), false, true);
+	}
+}
+
+void ACorvo::Landed(const FHitResult& hit) {
+	Super::Landed(hit);
+	numJumps = 0;
 }
 

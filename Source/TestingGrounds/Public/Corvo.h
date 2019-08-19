@@ -38,6 +38,8 @@ protected:
 
 	int activeAbility = 0;
 
+	int numJumps = 0;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -48,5 +50,9 @@ public:
 	UStaticMeshComponent* GetHand();
 
 	UCameraComponent* GetCamera();
+
+	virtual void Landed(const FHitResult& hit) override;
+
+	void MyJump();
 
 };
