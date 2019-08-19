@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "BlinkAbility.h"
+#include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
 #include "Corvo.generated.h"
 
 UCLASS()
@@ -24,6 +25,9 @@ protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
 	UCameraComponent* myCamera = nullptr;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
+	UCapsuleComponent* wallDetector = nullptr;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -39,6 +43,7 @@ protected:
 	int activeAbility = 0;
 
 	int numJumps = 0;
+	int maxJumps = 2;
 
 public:	
 	// Called every frame
@@ -51,7 +56,11 @@ public:
 
 	UCameraComponent* GetCamera();
 
+	UCapsuleComponent* GetWallDetector();
+
 	virtual void Landed(const FHitResult& hit) override;
+
+	void ResetJumps();
 
 	void MyJump();
 

@@ -89,8 +89,12 @@ UCameraComponent* ACorvo::GetCamera() {
 	return myCamera;
 }
 
+UCapsuleComponent* ACorvo::GetWallDetector() {
+	return wallDetector;
+}
+
 void ACorvo::MyJump() {
-	if (numJumps == 0 || numJumps == 1) {
+	if (numJumps < maxJumps) {
 		numJumps++;
 		this->LaunchCharacter(FVector(0.0f, 0.0f, 420.0f), false, true);
 	}
@@ -98,6 +102,10 @@ void ACorvo::MyJump() {
 
 void ACorvo::Landed(const FHitResult& hit) {
 	Super::Landed(hit);
+	numJumps = 0;
+}
+
+void ACorvo::ResetJumps() {
 	numJumps = 0;
 }
 
