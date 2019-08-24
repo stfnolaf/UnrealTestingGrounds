@@ -37,13 +37,16 @@ protected:
 	bool onWall = false;
 
 	// WALLRUN ANIMATION VARIABLES
-	FTimeline wallRunTimeline;
+	UTimelineComponent* wallRunTimeline;
+	FOnTimelineFloat WallRunInterpFunction{};
 	UFUNCTION()
-	void HandleWallRunProgress(float val);
+	void WallRunUpdate(float val);
 	UPROPERTY(EditAnywhere, Category = "WallRunning")
 	UCurveFloat* wallRunCurve;
 
 	void TurnOffWallRunning();
+
+	void SetOnWall(bool val);
 
 public:	
 	// Called every frame

@@ -6,6 +6,7 @@
 #include "Runtime/Engine/Classes/GameFramework/PawnMovementComponent.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 #include "Runtime/Engine/Classes/GameFramework/CharacterMovementComponent.h"
+#include "Runtime/Engine/Classes/Engine/Engine.h"
 
 // Sets default values for this component's properties
 UWallRunning::UWallRunning()
@@ -15,6 +16,8 @@ UWallRunning::UWallRunning()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	// ...
+	wallRunTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Wall Run Timeline"));
+	WallRunInterpFunction.BindUFunction(this, FName("WallRunUpdate"));
 }
 
 
@@ -42,12 +45,9 @@ void UWallRunning::BeginPlay()
 	// ...
 
 	if (wallRunCurve) {
-		FOnTimelineFloat ProgressFunction;
-
-		ProgressFunction.BindUFunction(this, FName("HandleWallRunProgress"));
-
-		wallRunTimeline.AddInterpFloat(wallRunCurve, ProgressFunction);
-		wallRunTimeline.SetLooping(true);
+		wallRunTimeline->AddInterpFloat(wallRunCurve, WallRunInterpFunction, FName("Dummy Value"));
+		wallRunTimeline->SetLooping(true);
+		wallRunTimeline->SetIgnoreTimeDilation(true);
 	}
 	
 }
@@ -56,19 +56,19 @@ void UWallRunning::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* O
 	player->ResetJumps();
 	playerDir = player->GetCamera()->GetForwardVector();
 
-	UE_LOG(LogTemp, Warning, TEXT("DETECTING OVERLAP WITH %s"), *(AActor::GetDebugName(OtherActor)));
+	//UE_LOG(LogTemp, Warning, TEXT("DETECTING OVERLAP WITH %s"), *(AActor::GetDebugName(OtherActor)));
 
 	//TODO - INVESTIGATE WHETHER WE SHOULD CAST UPAWNMOVEMENTCOMPONENT TO UCHARACTERMOVEMENTCOMPONENT
 	if (OtherActor->ActorHasTag("Wall") && player->GetCharacterMovement()->IsFalling()) {
-		onWall = true;
-		wallRunTimeline.PlayFromStart();
+		SetOnWall(true);
+		wallRunTimeline->PlayFromStart();
 		//UE_LOG(LogTemp, Warning, TEXT("TOUCHING WALL"));
 	}
 }
 
 void UWallRunning::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) {
 	if (OtherActor->ActorHasTag("Wall")) {
-		UE_LOG(LogTemp, Warning, TEXT("ENDED OVERLAP WITH %s"), *(AActor::GetDebugName(OtherActor)));
+		//UE_LOG(LogTemp, Warning, TEXT("LEFT WALL"));
 		TurnOffWallRunning();
 	}
 }
@@ -81,16 +81,15 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 	// ...
 }
 
-void UWallRunning::HandleWallRunProgress(float val) {
+void UWallRunning::WallRunUpdate(float val) {
 	if ((UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::W) > 0.0f
-		|| UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::A) > 0.0f
-		|| UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::S) > 0.0f
-		|| UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::D) > 0.0f) && onWall) {
+		|| UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::S) > 0.0f) && onWall) {
 		player->GetCharacterMovement()->GravityScale = 0.0f;
 		player->GetCharacterMovement()->SetPlaneConstraintNormal(FVector(0.0f, 0.0f, 1.0f));
 		player->GetCharacterMovement()->AddForce(playerDir * 20000.0f);
 	}
 	else {
+		wallRunTimeline->Stop();
 		TurnOffWallRunning();
 	}
 }
@@ -98,6 +97,14 @@ void UWallRunning::HandleWallRunProgress(float val) {
 void UWallRunning::TurnOffWallRunning() {
 	player->GetCharacterMovement()->GravityScale = 1.0f;
 	player->GetCharacterMovement()->SetPlaneConstraintNormal(FVector(0.0f, 0.0f, 0.0f));
-	onWall = false;
+	SetOnWall(false);
+}
+
+void UWallRunning::SetOnWall(bool val) {
+	onWall = val;
+	if (val)
+		player->DisableHorizontalMovement();
+	else
+		player->EnableHorizontalMovement();
 }
 

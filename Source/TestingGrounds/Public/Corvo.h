@@ -45,6 +45,8 @@ protected:
 	int numJumps = 0;
 	int maxJumps = 2;
 
+	bool horizontalMovementEnabled = true;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -63,5 +65,9 @@ public:
 	void ResetJumps();
 
 	void MyJump();
+
+	void DisableHorizontalMovement();
+
+	void EnableHorizontalMovement();
 
 };

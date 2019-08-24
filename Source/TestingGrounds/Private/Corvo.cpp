@@ -44,7 +44,7 @@ void ACorvo::OnQuit()
 }
 
 void ACorvo::MoveRight(float Value) {
-	if (Value != 0.0f) {
+	if (Value != 0.0f && horizontalMovementEnabled) {
 		AddMovementInput(GetActorRightVector(), Value);
 	}
 } // end of MoveRight()
@@ -98,6 +98,16 @@ void ACorvo::MyJump() {
 		numJumps++;
 		this->LaunchCharacter(FVector(0.0f, 0.0f, 420.0f), false, true);
 	}
+}
+
+void ACorvo::DisableHorizontalMovement()
+{
+	horizontalMovementEnabled = false;
+}
+
+void ACorvo::EnableHorizontalMovement()
+{
+	horizontalMovementEnabled = true;
 }
 
 void ACorvo::Landed(const FHitResult& hit) {
