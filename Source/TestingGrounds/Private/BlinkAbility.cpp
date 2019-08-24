@@ -49,7 +49,7 @@ void UBlinkAbility::BeginPlay()
 		}
 
 		if (corvoCam == nullptr) {
-			UE_LOG(LogTemp, Warning, TEXT("CAMERA NO LINKED PROPERLY"));
+			UE_LOG(LogTemp, Warning, TEXT("CAMERA NOT LINKED PROPERLY"));
 		}
 
 		if (Hand != nullptr) {

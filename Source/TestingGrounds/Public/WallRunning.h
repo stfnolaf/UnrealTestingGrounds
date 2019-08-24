@@ -36,6 +36,15 @@ protected:
 
 	bool onWall = false;
 
+	// WALLRUN ANIMATION VARIABLES
+	FTimeline wallRunTimeline;
+	UFUNCTION()
+	void HandleWallRunProgress(float val);
+	UPROPERTY(EditAnywhere, Category = "WallRunning")
+	UCurveFloat* wallRunCurve;
+
+	void TurnOffWallRunning();
+
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
