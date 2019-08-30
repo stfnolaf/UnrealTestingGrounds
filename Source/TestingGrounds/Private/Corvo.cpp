@@ -89,8 +89,12 @@ UCameraComponent* ACorvo::GetCamera() {
 	return myCamera;
 }
 
-UCapsuleComponent* ACorvo::GetWallDetector() {
-	return wallDetector;
+UBoxComponent* ACorvo::GetLeftDetector() {
+	return leftDetector;
+}
+
+UBoxComponent* ACorvo::GetRightDetector() {
+	return rightDetector;
 }
 
 void ACorvo::MyJump() {

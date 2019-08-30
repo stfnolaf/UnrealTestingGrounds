@@ -24,17 +24,11 @@ protected:
 
 	ACorvo* player = nullptr;
 
-	UCapsuleComponent* wallDetector = nullptr;
-
-	UFUNCTION()
-	void OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-		void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
 	FVector playerDir = FVector();
 
 	bool onWall = false;
+
+	FVector wallNormal = FVector();
 
 	// WALLRUN ANIMATION VARIABLES
 	UTimelineComponent* wallRunTimeline;
@@ -43,6 +37,18 @@ protected:
 	void WallRunUpdate(float val);
 	UPROPERTY(EditAnywhere, Category = "WallRunning")
 	UCurveFloat* wallRunCurve;
+
+	UTimelineComponent* smoothRunRightTimeline;
+	FOnTimelineFloat SmoothRunRightInterpFunction{};
+	UFUNCTION()
+	void SmoothRunRightUpdate(float val);
+	UPROPERTY(EditAnywhere, Category = "WallRunning")
+	UCurveFloat* smoothRunCurve;
+
+	UTimelineComponent* smoothRunLeftTimeline;
+	FOnTimelineFloat SmoothRunLeftInterpFunction{};
+	UFUNCTION()
+	void SmoothRunLeftUpdate(float val);
 
 	void TurnOffWallRunning();
 

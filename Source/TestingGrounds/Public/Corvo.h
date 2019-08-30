@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "BlinkAbility.h"
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
+#include "Runtime/Engine/Classes/Components/BoxComponent.h"
 #include "Corvo.generated.h"
 
 UCLASS()
@@ -26,7 +27,10 @@ protected:
 	UCameraComponent* myCamera = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
-	UCapsuleComponent* wallDetector = nullptr;
+	UBoxComponent* leftDetector = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
+	UBoxComponent* rightDetector = nullptr;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -58,7 +62,9 @@ public:
 
 	UCameraComponent* GetCamera();
 
-	UCapsuleComponent* GetWallDetector();
+	UBoxComponent* GetLeftDetector();
+
+	UBoxComponent* GetRightDetector();
 
 	virtual void Landed(const FHitResult& hit) override;
 
