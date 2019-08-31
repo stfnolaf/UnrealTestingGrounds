@@ -21,7 +21,10 @@ void ACorvo::BeginPlay()
 } // end of BeginPlay()
 
 void ACorvo::MoveForward(float Value) {
-	if (Value != 0.0f) {
+	if (railMovementEnabled) {
+		AddMovementInput(railDir, Value * 1.25f);
+	}
+	else if (Value != 0.0f) {
 		AddMovementInput(GetActorForwardVector(), Value);
 	}
 } // end of MoveForward()
@@ -123,3 +126,14 @@ void ACorvo::ResetJumps() {
 	numJumps = 0;
 }
 
+void ACorvo::LockRailMovement() {
+	railMovementEnabled = true;
+}
+
+void ACorvo::UnlockRailMovement() {
+	railMovementEnabled = false;
+}
+
+void ACorvo::SetRailDir(FVector vect) {
+	railDir = vect;
+}

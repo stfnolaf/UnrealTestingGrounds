@@ -28,31 +28,9 @@ protected:
 
 	bool onWall = false;
 
-	FVector wallNormal = FVector();
+	void StartWallRunning();
 
-	// WALLRUN ANIMATION VARIABLES
-	UTimelineComponent* wallRunTimeline;
-	FOnTimelineFloat WallRunInterpFunction{};
-	UFUNCTION()
-	void WallRunUpdate(float val);
-	UPROPERTY(EditAnywhere, Category = "WallRunning")
-	UCurveFloat* wallRunCurve;
-
-	UTimelineComponent* smoothRunRightTimeline;
-	FOnTimelineFloat SmoothRunRightInterpFunction{};
-	UFUNCTION()
-	void SmoothRunRightUpdate(float val);
-	UPROPERTY(EditAnywhere, Category = "WallRunning")
-	UCurveFloat* smoothRunCurve;
-
-	UTimelineComponent* smoothRunLeftTimeline;
-	FOnTimelineFloat SmoothRunLeftInterpFunction{};
-	UFUNCTION()
-	void SmoothRunLeftUpdate(float val);
-
-	void TurnOffWallRunning();
-
-	void SetOnWall(bool val);
+	void StopWallRunning();
 
 public:	
 	// Called every frame

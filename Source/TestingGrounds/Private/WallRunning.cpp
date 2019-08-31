@@ -18,14 +18,6 @@ UWallRunning::UWallRunning()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	// ...
-	wallRunTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Wall Run Timeline"));
-	WallRunInterpFunction.BindUFunction(this, FName("WallRunUpdate"));
-
-	smoothRunRightTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Smooth Run Right Timeline"));
-	SmoothRunRightInterpFunction.BindUFunction(this, FName("SmoothRunRightUpdate"));
-
-	smoothRunLeftTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Smooth Run Left Timeline"));
-	SmoothRunLeftInterpFunction.BindUFunction(this, FName("SmoothRunLeftUpdate"));
 }
 
 
@@ -43,23 +35,6 @@ void UWallRunning::BeginPlay()
 	}
 
 	// ...
-
-	if (wallRunCurve) {
-		wallRunTimeline->AddInterpFloat(wallRunCurve, WallRunInterpFunction, FName("Dummy Value"));
-		wallRunTimeline->SetLooping(true);
-		wallRunTimeline->SetIgnoreTimeDilation(true);
-	}
-
-	if (smoothRunCurve) {
-		smoothRunRightTimeline->AddInterpFloat(smoothRunCurve, SmoothRunRightInterpFunction, FName("RotValue"));
-		smoothRunRightTimeline->SetLooping(false);
-		smoothRunRightTimeline->SetIgnoreTimeDilation(true);
-
-		smoothRunLeftTimeline->AddInterpFloat(smoothRunCurve, SmoothRunLeftInterpFunction, FName("RotValue"));
-		smoothRunLeftTimeline->SetLooping(false);
-		smoothRunLeftTimeline->SetIgnoreTimeDilation(true);
-	}
-	
 }
 
 
@@ -77,6 +52,7 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 	bool contactRight = false;
 	FHitResult finalHitResult;
 	bool finalHitIsLeft = false;
+	
 	contactLeft = GetWorld()->LineTraceSingleByChannel(leftHit, startLoc, startLoc - 75.0f * rightVect, ECollisionChannel::ECC_Visibility);
 	contactRight = GetWorld()->LineTraceSingleByChannel(rightHit, startLoc, startLoc + 75.0f * rightVect, ECollisionChannel::ECC_Visibility);
 
@@ -116,22 +92,37 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 			playerDir = FVector::CrossProduct(finalHitResult.ImpactNormal, FVector::UpVector);
 		else
 			playerDir = FVector::CrossProduct(finalHitResult.ImpactNormal, FVector::DownVector);
+
+		// if not in wallrunning state, enter wallrunning state (start wallrunning timeline)
+		if (!onWall && player->GetMovementComponent()->IsFalling()) {
+			StartWallRunning();
+		}
 	}
-	
-	// if not in wallrunning state, enter wallrunning state (start wallrunning timeline)
-	//if (!wallRunTimeline->IsPlaying())
-		//wallRunTimeline->PlayFromStart();
+	else {
+		StopWallRunning();
+	}
+
+	if (onWall) {
+		if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::SpaceBar) > 0.0f)
+			player->MyJump();
+
+		if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::W) == 0.0f)
+			StopWallRunning();
+	}
+} // end of TickComponent()
+
+void UWallRunning::StartWallRunning() {
+	onWall = true;
+	player->GetCharacterMovement()->GravityScale = 0.0f;
+	player->GetCharacterMovement()->SetPlaneConstraintNormal(FVector::UpVector);
+	player->LockRailMovement();
+	player->DisableHorizontalMovement();
 }
 
-void UWallRunning::WallRunUpdate(float val) {
-	//lock player to plane, disable gravity, and move them along the wallrunning direction
+void UWallRunning::StopWallRunning() {
+	onWall = false;
+	player->GetCharacterMovement()->GravityScale = 1.0f;
+	player->GetCharacterMovement()->SetPlaneConstraintNormal(FVector::ZeroVector);
+	player->UnlockRailMovement();
+	player->EnableHorizontalMovement();
 }
-
-void UWallRunning::SmoothRunRightUpdate(float val) {
-
-}
-
-void UWallRunning::SmoothRunLeftUpdate(float val) {
-
-}
-

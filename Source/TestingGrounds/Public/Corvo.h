@@ -51,6 +51,10 @@ protected:
 
 	bool horizontalMovementEnabled = true;
 
+	bool railMovementEnabled = false;
+
+	FVector railDir = FVector();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -75,5 +79,11 @@ public:
 	void DisableHorizontalMovement();
 
 	void EnableHorizontalMovement();
+
+	void LockRailMovement();
+
+	void UnlockRailMovement();
+
+	void SetRailDir(FVector vect);
 
 };
