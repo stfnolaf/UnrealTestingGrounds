@@ -22,7 +22,7 @@ void ACorvo::BeginPlay()
 
 void ACorvo::MoveForward(float Value) {
 	if (railMovementEnabled) {
-		AddMovementInput(railDir, 2.0f);
+		AddMovementInput(railDir, 1.0f);
 	}
 	else if (Value != 0.0f) {
 		AddMovementInput(GetActorForwardVector(), Value);

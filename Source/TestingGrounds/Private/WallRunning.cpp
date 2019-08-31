@@ -141,6 +141,8 @@ void UWallRunning::StartWallRunning() {
 	onWall = true;
 	player->GetCharacterMovement()->GravityScale = 0.0f;
 	player->GetCharacterMovement()->SetPlaneConstraintNormal(FVector::UpVector);
+	player->GetCharacterMovement()->AirControl = 1.0f;
+	player->GetCharacterMovement()->MaxWalkSpeed = 750.0f;
 	player->LockRailMovement();
 	player->DisableHorizontalMovement();
 	player->ResetJumps();
@@ -150,6 +152,8 @@ void UWallRunning::StopWallRunning() {
 	onWall = false;
 	player->GetCharacterMovement()->GravityScale = 1.0f;
 	player->GetCharacterMovement()->SetPlaneConstraintNormal(FVector::ZeroVector);
+	player->GetCharacterMovement()->AirControl = 0.5f;
+	player->GetCharacterMovement()->MaxWalkSpeed = 600.0f;
 	player->UnlockRailMovement();
 	player->EnableHorizontalMovement();
 }
