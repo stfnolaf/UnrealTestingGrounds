@@ -24,6 +24,8 @@ protected:
 
 	ACorvo* player = nullptr;
 
+	AActor* lastWall = nullptr;
+
 	FVector playerDir = FVector();
 
 	bool onWall = false;

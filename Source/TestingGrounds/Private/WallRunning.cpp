@@ -8,6 +8,7 @@
 #include "Runtime/Engine/Classes/GameFramework/CharacterMovementComponent.h"
 #include "Runtime/Engine/Classes/Engine/Engine.h"
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
+#include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
 #include "Runtime/Engine/Public/DrawDebugHelpers.h"
 
 // Sets default values for this component's properties
@@ -43,6 +44,9 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	if (player->GetMovementComponent()->IsFalling())
+		lastWall = nullptr;
+
 	// Fire raycasts to left and right of player
 	FHitResult leftHit;
 	FHitResult rightHit;
@@ -57,11 +61,13 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 	contactRight = GetWorld()->LineTraceSingleByChannel(rightHit, startLoc, startLoc + 75.0f * rightVect, ECollisionChannel::ECC_Visibility);
 
 	// If actor is tagged as a wall and the impact normal's z coordinate is less than 0.1f
+
 	if (contactLeft)
 		contactLeft = contactLeft && leftHit.ImpactNormal.Z < 0.1f && leftHit.ImpactNormal.Z >= -0.05f && leftHit.Actor->ActorHasTag("Wall");
 
 	if (contactRight)
 		contactRight = contactRight && rightHit.ImpactNormal.Z < 0.1f && rightHit.ImpactNormal.Z >= -0.05f && rightHit.Actor->ActorHasTag("Wall");
+
 	// if both raycasts hit an acceptable surface, discard the further one
 	if (contactLeft && contactRight) {
 		if ((leftHit.ImpactPoint - startLoc).Size() < (rightHit.ImpactPoint - startLoc).Size()) {
@@ -94,7 +100,7 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 			playerDir = FVector::CrossProduct(finalHitResult.ImpactNormal, FVector::DownVector);
 
 		// if not in wallrunning state, enter wallrunning state (start wallrunning timeline)
-		if (!onWall && player->GetMovementComponent()->IsFalling()) {
+		if (!onWall && player->GetMovementComponent()->IsFalling() && ((lastWall && finalHitResult.Actor.IsValid() && UKismetMathLibrary::EqualEqual_ObjectObject(lastWall, rightHit.Actor.Get())) || !lastWall)) {
 			StartWallRunning();
 		}
 	}
@@ -103,11 +109,18 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 	}
 
 	if (onWall) {
+		// TODO - this doesn't work
 		if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::SpaceBar) > 0.0f)
 			player->MyJump();
 
-		if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::W) == 0.0f)
+		// TODO - this should only run once
+		if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::W) == 0.0f) {
 			StopWallRunning();
+			if (finalHitResult.Actor.IsValid()) {
+				UE_LOG(LogTemp, Warning, TEXT("ON WALL: %s"), onWall ? TEXT("TRUE") : TEXT("FALSE"));
+				lastWall = finalHitResult.Actor.Get();
+			}
+		}
 	}
 } // end of TickComponent()
 
@@ -117,6 +130,7 @@ void UWallRunning::StartWallRunning() {
 	player->GetCharacterMovement()->SetPlaneConstraintNormal(FVector::UpVector);
 	player->LockRailMovement();
 	player->DisableHorizontalMovement();
+	player->ResetJumps();
 }
 
 void UWallRunning::StopWallRunning() {
