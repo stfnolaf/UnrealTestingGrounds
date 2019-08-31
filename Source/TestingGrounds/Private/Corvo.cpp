@@ -104,6 +104,7 @@ void ACorvo::MyJump() {
 	if (numJumps < maxJumps) {
 		numJumps++;
 		this->LaunchCharacter(FVector(0.0f, 0.0f, 420.0f), false, true);
+		onGround = false;
 	}
 }
 
@@ -120,6 +121,7 @@ void ACorvo::EnableHorizontalMovement()
 void ACorvo::Landed(const FHitResult& hit) {
 	Super::Landed(hit);
 	numJumps = 0;
+	onGround = true;
 }
 
 void ACorvo::ResetJumps() {
@@ -136,4 +138,8 @@ void ACorvo::UnlockRailMovement() {
 
 void ACorvo::SetRailDir(FVector vect) {
 	railDir = vect;
+}
+
+bool ACorvo::IsOnGround() {
+	return onGround;
 }

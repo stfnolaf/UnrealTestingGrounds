@@ -44,8 +44,9 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (player->GetMovementComponent()->IsFalling())
+	if (!player->GetMovementComponent()->IsFalling() && player->IsOnGround()) {
 		lastWall = nullptr;
+	}
 
 	// Fire raycasts to left and right of player
 	FHitResult leftHit;
@@ -62,11 +63,15 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 
 	// If actor is tagged as a wall and the impact normal's z coordinate is less than 0.1f
 
-	if (contactLeft)
+	if (contactLeft) {
 		contactLeft = contactLeft && leftHit.ImpactNormal.Z < 0.1f && leftHit.ImpactNormal.Z >= -0.05f && leftHit.Actor->ActorHasTag("Wall");
+		contactLeft = contactLeft && (lastWall == nullptr || (lastWall != nullptr && leftHit.Actor.IsValid() && !UKismetMathLibrary::EqualEqual_ObjectObject(lastWall, leftHit.Actor.Get())));
+	}
 
-	if (contactRight)
+	if (contactRight) {
 		contactRight = contactRight && rightHit.ImpactNormal.Z < 0.1f && rightHit.ImpactNormal.Z >= -0.05f && rightHit.Actor->ActorHasTag("Wall");
+		contactRight = contactRight && (lastWall == nullptr || (lastWall != nullptr && rightHit.Actor.IsValid() && !UKismetMathLibrary::EqualEqual_ObjectObject(lastWall, rightHit.Actor.Get())));
+	}
 
 	// if both raycasts hit an acceptable surface, discard the further one
 	if (contactLeft && contactRight) {
@@ -99,8 +104,10 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		else
 			playerDir = FVector::CrossProduct(finalHitResult.ImpactNormal, FVector::DownVector);
 
-		// if not in wallrunning state, enter wallrunning state (start wallrunning timeline)
-		if (!onWall && player->GetMovementComponent()->IsFalling() && ((lastWall && finalHitResult.Actor.IsValid() && UKismetMathLibrary::EqualEqual_ObjectObject(lastWall, rightHit.Actor.Get())) || !lastWall)) {
+		// enter wallrunning state IF
+		if (!onWall // we're not currently on a wall
+			&& player->GetMovementComponent()->IsFalling() ) // we are in the air 
+		{
 			StartWallRunning();
 		}
 	}
@@ -109,15 +116,21 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 	}
 
 	if (onWall) {
-		// TODO - this doesn't work
-		if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::SpaceBar) > 0.0f)
+		if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->WasInputKeyJustPressed(EKeys::SpaceBar)) {
+			StopWallRunning();
+			if (finalHitResult.Actor.IsValid()) {
+				lastWall = finalHitResult.Actor.Get();
+			}
+			else {
+				UE_LOG(LogTemp, Error, TEXT("LASTWALL COULD NOT BE SET - WALLRUNNING::TICKCOMPONENT()"));
+			}
+			player->ResetJumps();
 			player->MyJump();
+		}
 
-		// TODO - this should only run once
 		if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::W) == 0.0f) {
 			StopWallRunning();
 			if (finalHitResult.Actor.IsValid()) {
-				UE_LOG(LogTemp, Warning, TEXT("ON WALL: %s"), onWall ? TEXT("TRUE") : TEXT("FALSE"));
 				lastWall = finalHitResult.Actor.Get();
 			}
 		}

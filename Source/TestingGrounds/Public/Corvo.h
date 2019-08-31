@@ -53,6 +53,8 @@ protected:
 
 	bool railMovementEnabled = false;
 
+	bool onGround = true;
+
 	FVector railDir = FVector();
 
 public:	
@@ -85,5 +87,7 @@ public:
 	void UnlockRailMovement();
 
 	void SetRailDir(FVector vect);
+
+	bool IsOnGround();
 
 };
