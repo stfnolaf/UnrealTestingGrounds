@@ -34,6 +34,10 @@ protected:
 
 	void StopWallRunning();
 
+	float timeStartNewRotateAnim = 0.0f;
+
+	float timeToRotateOnWall = 0.25f;
+
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

@@ -58,8 +58,8 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 	FHitResult finalHitResult;
 	bool finalHitIsLeft = false;
 	
-	contactLeft = GetWorld()->LineTraceSingleByChannel(leftHit, startLoc, startLoc - 75.0f * rightVect, ECollisionChannel::ECC_Visibility);
-	contactRight = GetWorld()->LineTraceSingleByChannel(rightHit, startLoc, startLoc + 75.0f * rightVect, ECollisionChannel::ECC_Visibility);
+	contactLeft = GetWorld()->LineTraceSingleByChannel(leftHit, startLoc, startLoc - 55.0f * rightVect, ECollisionChannel::ECC_Visibility);
+	contactRight = GetWorld()->LineTraceSingleByChannel(rightHit, startLoc, startLoc + 55.0f * rightVect, ECollisionChannel::ECC_Visibility);
 
 	// If actor is tagged as a wall and the impact normal's z coordinate is less than 0.1f
 
@@ -104,6 +104,7 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		else
 			playerDir = FVector::CrossProduct(finalHitResult.ImpactNormal, FVector::DownVector);
 
+		player->SetRailDir(playerDir);
 		// enter wallrunning state IF
 		if (!onWall // we're not currently on a wall
 			&& player->GetMovementComponent()->IsFalling() ) // we are in the air 
@@ -111,11 +112,16 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 			StartWallRunning();
 		}
 	}
-	else {
-		StopWallRunning();
-	}
 
 	if (onWall) {
+
+		if (finalHitIsLeft) {
+			//rotate to left wall
+		}
+		else {
+			//rotate to right wall
+		}
+
 		if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->WasInputKeyJustPressed(EKeys::SpaceBar)) {
 			StopWallRunning();
 			if (finalHitResult.Actor.IsValid()) {
@@ -128,11 +134,29 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 			player->MyJump();
 		}
 
-		if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::W) == 0.0f) {
+		if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::W) == 0.0f
+			|| UKismetMathLibrary::RadiansToDegrees(UKismetMathLibrary::Acos(FVector::DotProduct(player->GetCamera()->GetComponentRotation().Vector().GetSafeNormal(), playerDir.GetSafeNormal()))) > 30.0f) {
 			StopWallRunning();
 			if (finalHitResult.Actor.IsValid()) {
 				lastWall = finalHitResult.Actor.Get();
 			}
+		}
+
+		if (!contactLeft && !contactRight) {
+			StopWallRunning();
+		}
+
+		// keep player constant distance from wall
+		FPlane wallPlane = FPlane(finalHitResult.ImpactPoint, finalHitResult.ImpactNormal);
+		float dist = wallPlane.PlaneDot(player->GetActorLocation());
+
+		if (dist < 45.0f) {
+			// move player further from the wall
+			player->SetActorLocation(player->GetActorLocation() + finalHitResult.ImpactNormal, true);
+		}
+		else if (dist > 45.0f) {
+			// move player towards the wall
+			player->SetActorLocation(player->GetActorLocation() - finalHitResult.ImpactNormal, true);
 		}
 	}
 } // end of TickComponent()
@@ -142,10 +166,12 @@ void UWallRunning::StartWallRunning() {
 	player->GetCharacterMovement()->GravityScale = 0.0f;
 	player->GetCharacterMovement()->SetPlaneConstraintNormal(FVector::UpVector);
 	player->GetCharacterMovement()->AirControl = 1.0f;
-	player->GetCharacterMovement()->MaxWalkSpeed = 750.0f;
+	player->GetCharacterMovement()->MaxWalkSpeed = 850.0f;
 	player->LockRailMovement();
 	player->DisableHorizontalMovement();
 	player->ResetJumps();
+	timeStartNewRotateAnim = UKismetSystemLibrary::GetGameTimeInSeconds(GetWorld());
+	UE_LOG(LogTemp, Warning, TEXT("STARTING WALLRUN"));
 }
 
 void UWallRunning::StopWallRunning() {
@@ -156,4 +182,6 @@ void UWallRunning::StopWallRunning() {
 	player->GetCharacterMovement()->MaxWalkSpeed = 600.0f;
 	player->UnlockRailMovement();
 	player->EnableHorizontalMovement();
+	timeStartNewRotateAnim = UKismetSystemLibrary::GetGameTimeInSeconds(GetWorld());
+	UE_LOG(LogTemp, Warning, TEXT("STOPPING WALLRUN"));
 }
