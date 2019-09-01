@@ -115,6 +115,8 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 
 	if (onWall) {
 
+		//player->SetActorLocation(player->GetActorLocation() + playerDir * DeltaTime * 100.0f, true);
+
 		if (finalHitIsLeft) {
 			//rotate to left wall
 		}
@@ -135,7 +137,7 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		}
 
 		if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::W) == 0.0f
-			|| UKismetMathLibrary::RadiansToDegrees(UKismetMathLibrary::Acos(FVector::DotProduct(player->GetCamera()->GetComponentRotation().Vector().GetSafeNormal(), playerDir.GetSafeNormal()))) > 30.0f) {
+			|| UKismetMathLibrary::RadiansToDegrees(UKismetMathLibrary::Acos(FVector::DotProduct(player->GetCamera()->GetComponentRotation().Vector().GetSafeNormal(), playerDir.GetSafeNormal()))) > 36.0f) {
 			StopWallRunning();
 			if (finalHitResult.Actor.IsValid()) {
 				lastWall = finalHitResult.Actor.Get();
@@ -152,11 +154,11 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 
 		if (dist < 45.0f) {
 			// move player further from the wall
-			player->SetActorLocation(player->GetActorLocation() + finalHitResult.ImpactNormal, true);
+			player->SetActorLocation(player->GetActorLocation() + DeltaTime * 100.0f * finalHitResult.ImpactNormal, true);
 		}
 		else if (dist > 45.0f) {
 			// move player towards the wall
-			player->SetActorLocation(player->GetActorLocation() - finalHitResult.ImpactNormal, true);
+			player->SetActorLocation(player->GetActorLocation() - DeltaTime * 100.0f * finalHitResult.ImpactNormal, true);
 		}
 	}
 } // end of TickComponent()
@@ -168,7 +170,7 @@ void UWallRunning::StartWallRunning() {
 	player->GetCharacterMovement()->AirControl = 1.0f;
 	player->GetCharacterMovement()->MaxWalkSpeed = 850.0f;
 	player->LockRailMovement();
-	player->DisableHorizontalMovement();
+	//player->DisableHorizontalMovement();
 	player->ResetJumps();
 	timeStartNewRotateAnim = UKismetSystemLibrary::GetGameTimeInSeconds(GetWorld());
 	UE_LOG(LogTemp, Warning, TEXT("STARTING WALLRUN"));
@@ -181,7 +183,7 @@ void UWallRunning::StopWallRunning() {
 	player->GetCharacterMovement()->AirControl = 0.5f;
 	player->GetCharacterMovement()->MaxWalkSpeed = 600.0f;
 	player->UnlockRailMovement();
-	player->EnableHorizontalMovement();
+	//player->EnableHorizontalMovement();
 	timeStartNewRotateAnim = UKismetSystemLibrary::GetGameTimeInSeconds(GetWorld());
 	UE_LOG(LogTemp, Warning, TEXT("STOPPING WALLRUN"));
 }

@@ -23,7 +23,7 @@ void ACorvo::BeginPlay()
 void ACorvo::MoveForward(float Value) {
 	if (railMovementEnabled) {
 		AddMovementInput(railDir, 1.0f);
-		//UE_LOG(LogTemp, Warning, TEXT("Movement direction: %s"), *railDir.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Movement direction: %s"), *railDir.ToString());
 	}
 	else if (Value != 0.0f) {
 		AddMovementInput(GetActorForwardVector(), Value);
