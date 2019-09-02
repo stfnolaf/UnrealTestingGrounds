@@ -38,6 +38,12 @@ protected:
 
 	float timeToRotateOnWall = 0.25f;
 
+	float directionLocked = false;
+
+	FVector lastWallNormal = FVector::ZeroVector;
+
+	APlayerController* myPC = nullptr;
+
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

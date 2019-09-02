@@ -23,7 +23,7 @@ void ACorvo::BeginPlay()
 void ACorvo::MoveForward(float Value) {
 	if (railMovementEnabled) {
 		AddMovementInput(railDir, 1.0f);
-		UE_LOG(LogTemp, Warning, TEXT("Movement direction: %s"), *railDir.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("Movement direction: %s"), *railDir.ToString());
 	}
 	else if (Value != 0.0f) {
 		AddMovementInput(GetActorForwardVector(), Value);
@@ -48,10 +48,28 @@ void ACorvo::OnQuit()
 }
 
 void ACorvo::MoveRight(float Value) {
-	if (Value != 0.0f && horizontalMovementEnabled) {
+	if (Value != 0.0f && horizontalMovementEnabled && !railMovementEnabled) {
 		AddMovementInput(GetActorRightVector(), Value);
 	}
 } // end of MoveRight()
+
+void ACorvo::AddYaw(float Value) {
+	//if (railMovementEnabled) {
+	//	mySpringArm->AddRelativeRotation(FRotator(mySpringArm->RelativeRotation.Pitch, Value, mySpringArm->RelativeRotation.Roll).Quaternion());
+	//}
+	//else {
+		APawn::AddControllerYawInput(Value);
+	//ssssssssssss}
+}
+
+void ACorvo::AddPitch(float Value) {
+	//if (railMovementEnabled) {
+	//	mySpringArm->AddRelativeRotation(FRotator(Value * -1.0f, mySpringArm->RelativeRotation.Yaw, mySpringArm->RelativeRotation.Roll).Quaternion());
+	//}
+	//else {
+		APawn::AddControllerPitchInput(Value);
+	//}
+}
 
 // Called every frame
 void ACorvo::Tick(float DeltaTime)
@@ -75,8 +93,8 @@ void ACorvo::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis("MoveForward", this, &ACorvo::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ACorvo::MoveRight);
 
-	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+	PlayerInputComponent->BindAxis("Turn", this, &ACorvo::AddYaw);
+	PlayerInputComponent->BindAxis("LookUp", this, &ACorvo::AddPitch);
 
 	PlayerInputComponent->BindAction("Teleport", IE_Pressed, this, &ACorvo::OnInitiateAbility);
 	PlayerInputComponent->BindAction("Teleport", IE_Released, this, &ACorvo::OnReleaseAbility);
@@ -91,14 +109,6 @@ UStaticMeshComponent* ACorvo::GetHand() {
 
 UCameraComponent* ACorvo::GetCamera() {
 	return myCamera;
-}
-
-UBoxComponent* ACorvo::GetLeftDetector() {
-	return leftDetector;
-}
-
-UBoxComponent* ACorvo::GetRightDetector() {
-	return rightDetector;
 }
 
 void ACorvo::MyJump() {
@@ -131,10 +141,16 @@ void ACorvo::ResetJumps() {
 
 void ACorvo::LockRailMovement() {
 	railMovementEnabled = true;
+	//mySpringArm->bInheritYaw = false;
+	//mySpringArm->bInheritPitch = false;
+	//mySpringArm->bUsePawnControlRotation = false;
 }
 
 void ACorvo::UnlockRailMovement() {
 	railMovementEnabled = false;
+	//mySpringArm->bInheritYaw = true;
+	//mySpringArm->bInheritPitch = true;
+	//mySpringArm->bUsePawnControlRotation = true;
 }
 
 void ACorvo::SetRailDir(FVector vect) {

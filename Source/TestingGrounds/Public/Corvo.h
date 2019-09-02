@@ -7,6 +7,7 @@
 #include "BlinkAbility.h"
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
 #include "Runtime/Engine/Classes/Components/BoxComponent.h"
+#include "Runtime/Engine/Classes/GameFramework/SpringArmComponent.h"
 #include "Corvo.generated.h"
 
 UCLASS()
@@ -26,18 +27,14 @@ protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
 	UCameraComponent* myCamera = nullptr;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
-	UBoxComponent* leftDetector = nullptr;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
-	UBoxComponent* rightDetector = nullptr;
-
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	// CONTROL METHODS
 	void MoveRight(float Val);
 	void MoveForward(float Val);
+	void AddYaw(float Val);
+	void AddPitch(float Val);
 	void OnInitiateAbility();
 	void OnReleaseAbility();
 	void OnQuit();
@@ -57,6 +54,9 @@ protected:
 
 	FVector railDir = FVector();
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
+	USpringArmComponent* mySpringArm = nullptr;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -67,10 +67,6 @@ public:
 	UStaticMeshComponent* GetHand();
 
 	UCameraComponent* GetCamera();
-
-	UBoxComponent* GetLeftDetector();
-
-	UBoxComponent* GetRightDetector();
 
 	virtual void Landed(const FHitResult& hit) override;
 
