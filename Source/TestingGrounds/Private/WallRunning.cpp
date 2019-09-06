@@ -67,10 +67,10 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		lineTraceDist = 100.0f;
 	
 	contactLeft = GetWorld()->LineTraceSingleByChannel(leftHit, startLoc, startLoc - lineTraceDist * rightVect, ECollisionChannel::ECC_Visibility);
-	if(!contactLeft && directionLocked)
+	if(!contactLeft && directionLocked || (contactLeft && leftHit.Actor.IsValid() && leftHit.Actor.Get()->ActorHasTag("Wall")))
 		contactLeft = GetWorld()->LineTraceSingleByChannel(leftHit, startLoc, startLoc + lineTraceDist * diagonalLeftVect, ECollisionChannel::ECC_Visibility);
 	contactRight = GetWorld()->LineTraceSingleByChannel(rightHit, startLoc, startLoc + lineTraceDist * rightVect, ECollisionChannel::ECC_Visibility);
-	if(!contactRight && directionLocked)
+	if(!contactRight && directionLocked || (contactRight && rightHit.Actor.IsValid() && rightHit.Actor.Get()->ActorHasTag("Wall")))
 		contactRight = GetWorld()->LineTraceSingleByChannel(rightHit, startLoc, startLoc + lineTraceDist * diagonalRightVect, ECollisionChannel::ECC_Visibility);
 
 	// If actor is tagged as a wall and the impact normal's z coordinate is less than 0.1f
@@ -114,7 +114,6 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		wallNormal = finalHitResult.ImpactPoint - finalHitResult.Actor.Get()->GetActorLocation();
 		wallNormal = FVector(wallNormal.X, wallNormal.Y, 0.0f).GetSafeNormal();
 		if (lastWallNormal != FVector::ZeroVector) {
-			UE_LOG(LogTemp, Warning, TEXT("AAAAAAAA"));
 			float deltaAngle = wallNormal.Rotation().Yaw - lastWallNormal.Rotation().Yaw;
 			myPC->SetControlRotation(FRotator(myPC->GetControlRotation().Pitch, myPC->GetControlRotation().Yaw + deltaAngle, myPC->GetControlRotation().Roll));
 		}
