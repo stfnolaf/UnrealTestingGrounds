@@ -67,10 +67,10 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		lineTraceDist = 100.0f;
 	
 	contactLeft = GetWorld()->LineTraceSingleByChannel(leftHit, startLoc, startLoc - lineTraceDist * rightVect, ECollisionChannel::ECC_Visibility);
-	if(!contactLeft && directionLocked || (contactLeft && leftHit.Actor.IsValid() && leftHit.Actor.Get()->ActorHasTag("Wall")))
+	if(!contactLeft && directionLocked || (contactLeft && leftHit.Actor.IsValid() && !leftHit.Actor.Get()->ActorHasTag("Wall")))
 		contactLeft = GetWorld()->LineTraceSingleByChannel(leftHit, startLoc, startLoc + lineTraceDist * diagonalLeftVect, ECollisionChannel::ECC_Visibility);
 	contactRight = GetWorld()->LineTraceSingleByChannel(rightHit, startLoc, startLoc + lineTraceDist * rightVect, ECollisionChannel::ECC_Visibility);
-	if(!contactRight && directionLocked || (contactRight && rightHit.Actor.IsValid() && rightHit.Actor.Get()->ActorHasTag("Wall")))
+	if(!contactRight && directionLocked || (contactRight && rightHit.Actor.IsValid() && !rightHit.Actor.Get()->ActorHasTag("Wall")))
 		contactRight = GetWorld()->LineTraceSingleByChannel(rightHit, startLoc, startLoc + lineTraceDist * diagonalRightVect, ECollisionChannel::ECC_Visibility);
 
 	// If actor is tagged as a wall and the impact normal's z coordinate is less than 0.1f
