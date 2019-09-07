@@ -9,7 +9,6 @@
 #include "Runtime/Engine/Classes/Engine/Engine.h"
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 #include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
-#include "Runtime/Engine/Public/DrawDebugHelpers.h"
 
 // Sets default values for this component's properties
 UWallRunning::UWallRunning()

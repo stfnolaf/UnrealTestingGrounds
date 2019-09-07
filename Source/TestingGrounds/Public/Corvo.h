@@ -5,9 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "BlinkAbility.h"
+#include "Grapple.h"
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
 #include "Runtime/Engine/Classes/Components/BoxComponent.h"
 #include "Runtime/Engine/Classes/GameFramework/SpringArmComponent.h"
+#include "CableComponent.h"
 #include "Corvo.generated.h"
 
 UCLASS()
@@ -39,7 +41,7 @@ protected:
 	void OnReleaseAbility();
 	void OnQuit();
 
-	TArray<UBlinkAbility*> abilities;
+	TArray<UGrapple*> abilities;
 
 	int activeAbility = 0;
 
@@ -56,6 +58,9 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
 	USpringArmComponent* mySpringArm = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
+	UCableComponent* myCable;
 
 public:	
 	// Called every frame
@@ -85,5 +90,7 @@ public:
 	void SetRailDir(FVector vect);
 
 	bool IsOnGround();
+
+	UCableComponent* GetCable();
 
 };

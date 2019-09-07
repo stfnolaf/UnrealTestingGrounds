@@ -160,3 +160,7 @@ void ACorvo::SetRailDir(FVector vect) {
 bool ACorvo::IsOnGround() {
 	return onGround;
 }
+
+UCableComponent* ACorvo::GetCable() {
+	return myCable;
+}
