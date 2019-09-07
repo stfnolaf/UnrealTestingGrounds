@@ -28,6 +28,22 @@ protected:
 
 	bool hooked = false;
 
+	bool hookMoveFinished = false;
+
+	bool MoveCable(float deltaTime);
+
+	bool toggleGrapple = true;
+
+	bool canSetCableLength = true;
+
+	float newCableLength = 0.0f;
+
+	void ResetGrapple();
+
+	bool grappleButtonPressed = false;
+
+	void MovePlayer(float deltaTime);
+
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
