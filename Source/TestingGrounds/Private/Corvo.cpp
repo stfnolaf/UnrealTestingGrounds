@@ -164,3 +164,7 @@ bool ACorvo::IsOnGround() {
 UCableComponent* ACorvo::GetCable() {
 	return myCable;
 }
+
+UCapsuleComponent* ACorvo::GetCapsuleComponent() {
+	return myCapsule;
+}

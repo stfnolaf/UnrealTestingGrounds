@@ -26,23 +26,33 @@ protected:
 
 	FVector hookLocation = FVector();
 
-	bool hooked = false;
+	void ShootCable(float deltaTime);
 
-	bool hookMoveFinished = false;
-
-	bool MoveCable(float deltaTime);
-
-	bool toggleGrapple = true;
-
-	bool canSetCableLength = true;
-
-	float newCableLength = 0.0f;
-
+	UFUNCTION(BlueprintCallable, Category = "Grapple")
 	void ResetGrapple();
 
-	bool grappleButtonPressed = false;
+	float deltaTime = 0.0f;
 
-	void MovePlayer(float deltaTime);
+	bool canGrapple = true;
+
+	bool grapplingHookEnabled = false;
+
+	float timeShootingGrapple = 0.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Corvo")
+	float grappleDistance = 3000.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Corvo")
+	float grappleCooldown = 1.0f;
+
+	UFUNCTION(BlueprintCallable, Category = "Grapple")
+	void GrappleAfterDelay();
+
+	UFUNCTION(BlueprintCallable, Category = "Grapple")
+	void ResetGrappleCoolDownAfterDelay();
+
+	UFUNCTION()
+	void OnHitWall(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 public:	
 	// Called every frame

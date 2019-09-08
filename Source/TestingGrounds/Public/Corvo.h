@@ -27,6 +27,9 @@ protected:
 	UStaticMeshComponent* Hand = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
+	UCapsuleComponent* myCapsule;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
 	UCameraComponent* myCamera = nullptr;
 
 	// Called when the game starts or when spawned
@@ -72,6 +75,8 @@ public:
 	UStaticMeshComponent* GetHand();
 
 	UCameraComponent* GetCamera();
+
+	UCapsuleComponent* GetCapsuleComponent();
 
 	virtual void Landed(const FHitResult& hit) override;
 

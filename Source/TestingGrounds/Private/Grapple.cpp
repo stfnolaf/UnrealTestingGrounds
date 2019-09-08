@@ -34,7 +34,8 @@ void UGrapple::BeginPlay()
 	player->GetCable()->SetVisibility(false);
 	player->GetCable()->CableLength = 0.0f;
 	player->GetCable()->CableWidth = 2.0f;
-	player->GetCable()->EndLocation = FVector(120.0f, 10.0f, 60.0f);
+	player->GetCable()->EndLocation = FVector::ZeroVector;
+	player->GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &UGrapple::OnHitWall);
 }
 
 
@@ -44,97 +45,82 @@ void UGrapple::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
-	if (hooked) {
-		MovePlayer(DeltaTime);
-		if (!hookMoveFinished) {
-			//MOVE CABLE - make function?
-			hookMoveFinished = MoveCable(DeltaTime);
-		}
-		else {
-			player->GetCable()->SetWorldLocationAndRotation(
-				FMath::VInterpTo(player->GetCable()->GetComponentLocation(), hookLocation, DeltaTime, 250.0f),
-				UKismetMathLibrary::FindLookAtRotation(player->GetActorLocation(), hookLocation),
-				false,
-				nullptr,
-				ETeleportType::None
-			);
-			if (canSetCableLength) {
-				newCableLength = (player->GetActorLocation() - hookLocation).Size() + 50.0f;
-				player->GetCable()->CableLength = newCableLength;
-				player->GetCable()->EndLocation = FVector(15.0f, 0.0f, 30.0f);
-				canSetCableLength = false;
-			}
-			if ((player->GetActorLocation() - hookLocation).Size() >= newCableLength + 400.0f) {
-				ResetGrapple();
-			}
-		}
-	}
+	deltaTime = DeltaTime;
 }
 
-bool UGrapple::MoveCable(float deltaTime) {
+void UGrapple::ShootCable(float deltaTime) {
 	player->GetCable()->SetVisibility(true);
-	if ((player->GetCable()->GetComponentLocation() - hookLocation).Size() > 100.0f) {
-		player->GetCable()->SetWorldLocation(FMath::VInterpTo(player->GetCable()->GetComponentLocation(), hookLocation, deltaTime, 10.0f));
-		return false;
-	}
-	return true;
-}
-
-void UGrapple::MovePlayer(float deltaTime) {
-	if (grappleButtonPressed) {
-		player->LaunchCharacter((hookLocation - UGameplayStatics::GetPlayerPawn(GetWorld(), 0)->GetActorLocation()) * deltaTime * 250.0f, true, true);
-		player->GetCable()->CableLength = (player->GetActorLocation() - hookLocation).Size();
-	}
+	timeShootingGrapple += deltaTime;
+	if (timeShootingGrapple >= 0.5f)
+		return;
+	else
+		player->GetCable()->SetWorldLocation(FMath::VInterpTo(player->GetCable()->GetComponentLocation(), hookLocation, deltaTime, 30.0f));
 }
 
 void UGrapple::OnInitiateAbility() {
-	grappleButtonPressed = true;
-	if (toggleGrapple) {
-		TArray<AActor*> actorsToIgnore;
+	if (canGrapple) {
+		canGrapple = false;
+		grapplingHookEnabled = true;
 		FHitResult cableHit;
-		actorsToIgnore.Add(player);
-		TArray<TEnumAsByte<EObjectTypeQuery>> objectTypes;
-		objectTypes.Add(EObjectTypeQuery::ObjectTypeQuery1);
-		objectTypes.Add(EObjectTypeQuery::ObjectTypeQuery2);
 		if (
-			UKismetSystemLibrary::LineTraceSingleForObjects(
-				GetWorld(),
-				player->GetCamera()->GetComponentLocation(),
-				player->GetCamera()->GetComponentLocation() + player->GetCamera()->GetForwardVector() * 3500.0f,
-				objectTypes,
-				false,
-				actorsToIgnore,
-				EDrawDebugTrace::ForDuration,
+			GetWorld()->LineTraceSingleByChannel(
 				cableHit,
-				true,
-				FLinearColor::Red,
-				FLinearColor::Green,
-				5.0f) && cableHit.Actor.IsValid()
+				player->GetCamera()->GetComponentLocation(),
+				player->GetCamera()->GetComponentLocation() + player->GetCamera()->GetForwardVector() * grappleDistance,
+				ECollisionChannel::ECC_Visibility)
 			) {
-			player->SetActorRotation(FRotator(UKismetMathLibrary::FindLookAtRotation(player->GetActorLocation(), cableHit.Location).Pitch, UKismetMathLibrary::FindLookAtRotation(player->GetActorLocation(), cableHit.Location).Yaw, 0.0f));
-			hooked = true;
 			hookLocation = cableHit.Location;
+			ShootCable(deltaTime);
+			player->LaunchCharacter(FVector::UpVector * 500.0f, true, true);
+			FLatentActionInfo info;
+			info.CallbackTarget = this;
+			info.ExecutionFunction = "GrappleAfterDelay";
+			info.UUID = 123;
+			info.Linkage = 0;
+			UKismetSystemLibrary::Delay(this, 0.2f, info);
 		}
 		else {
 			ResetGrapple();
 		}
 	}
-	else {
-		ResetGrapple();
-	}
-	toggleGrapple = !toggleGrapple;
+}
+
+void UGrapple::GrappleAfterDelay() {
+	player->LaunchCharacter((hookLocation - player->GetActorLocation()) * 2.5f, false, false);
+	FLatentActionInfo info;
+	info.CallbackTarget = this;
+	info.ExecutionFunction = "ResetGrapple";
+	info.UUID = 125;
+	info.Linkage = 0;
+	UKismetSystemLibrary::Delay(this, 0.4f, info);
 }
 
 void UGrapple::ResetGrapple() {
-	hooked = false;
-	hookMoveFinished = false;
 	player->GetCable()->SetVisibility(false);
 	player->GetCable()->SetWorldLocation(player->GetActorLocation());
-	player->GetCable()->EndLocation = FVector(120.0f, 10.0f, 60.0f);
-	canSetCableLength = true;
+	player->GetCable()->EndLocation = FVector(0.0f, 0.0f, 0.0f);
+	grapplingHookEnabled = false;
+	timeShootingGrapple = 0.0f;
+	FLatentActionInfo info;
+	info.CallbackTarget = this;
+	info.ExecutionFunction = "ResetGrappleCoolDownAfterDelay";
+	info.UUID = 124;
+	info.Linkage = 0;
+	UKismetSystemLibrary::Delay(this, grappleCooldown, info);
+}
+
+void UGrapple::ResetGrappleCoolDownAfterDelay() {
+	canGrapple = true;
+}
+
+void UGrapple::OnHitWall(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (!OtherComp->IsSimulatingPhysics() && grapplingHookEnabled) {
+		player->LaunchCharacter(FVector::UpVector * 400.0f, true, true);
+		UE_LOG(LogTemp, Warning, TEXT("Climbing Wall"));
+	}
 }
 
 void UGrapple::OnReleaseAbility() {
-	grappleButtonPressed = false;
 	return;
 }
