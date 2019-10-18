@@ -7,6 +7,7 @@
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 #include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
 #include "CableComponent.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values for this component's properties
 UGrapple::UGrapple()
@@ -55,6 +56,7 @@ void UGrapple::ShootCable(float deltaTime) {
 		return;
 	else
 		player->GetCable()->SetWorldLocation(FMath::VInterpTo(player->GetCable()->GetComponentLocation(), hookLocation, deltaTime, 30.0f));
+	UE_LOG(LogTemp, Warning, TEXT("REEEEEEEEEE"));
 }
 
 void UGrapple::OnInitiateAbility() {
@@ -98,7 +100,7 @@ void UGrapple::GrappleAfterDelay() {
 void UGrapple::ResetGrapple() {
 	player->GetCable()->SetVisibility(false);
 	player->GetCable()->SetWorldLocation(player->GetActorLocation());
-	player->GetCable()->EndLocation = FVector(0.0f, 0.0f, 0.0f);
+	player->GetCable()->EndLocation = FVector::ZeroVector;
 	grapplingHookEnabled = false;
 	timeShootingGrapple = 0.0f;
 	FLatentActionInfo info;
@@ -115,7 +117,7 @@ void UGrapple::ResetGrappleCoolDownAfterDelay() {
 
 void UGrapple::OnHitWall(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (!OtherComp->IsSimulatingPhysics() && grapplingHookEnabled) {
+	if (!OtherComp->IsSimulatingPhysics() && grapplingHookEnabled && Hit.ImpactNormal.Y < 0.1f) {
 		player->LaunchCharacter(FVector::UpVector * 400.0f, true, true);
 		UE_LOG(LogTemp, Warning, TEXT("Climbing Wall"));
 	}
