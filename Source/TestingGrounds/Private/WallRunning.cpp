@@ -167,6 +167,21 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 			myPC->SetControlRotation(FMath::RInterpTo(myPC->GetControlRotation(), FRotator(myPC->GetControlRotation().Pitch, myPC->GetControlRotation().Yaw, -12.5f), DeltaTime, 10.0f));
 		}
 
+		// keep player constant distance from wall
+		if (finalHitResult.Actor.IsValid()) {
+			FPlane wallPlane = FPlane(finalHitResult.ImpactPoint, wallNormal);
+			float dist = wallPlane.PlaneDot(player->GetActorLocation());
+
+			if (dist < 45.0f) {
+				// move player further from the wall
+				player->SetActorLocation(FMath::VInterpTo(player->GetActorLocation(), finalHitResult.ImpactPoint + 45.0f * wallNormal, DeltaTime, 20.0f));
+			}
+			else if (dist > 45.0f) {
+				// move player towards the wall
+				player->SetActorLocation(FMath::VInterpTo(player->GetActorLocation(), finalHitResult.ImpactPoint + 45.0f * wallNormal, DeltaTime, 20.0f));
+			}
+		}
+
 		if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->WasInputKeyJustPressed(EKeys::SpaceBar)) {
 			StopWallRunning();
 			if (finalHitResult.Actor.IsValid()) {
@@ -193,19 +208,6 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		if (!contactLeft && !contactRight) {
 			StopWallRunning();
 		}
-
-		// keep player constant distance from wall
-		FPlane wallPlane = FPlane(finalHitResult.ImpactPoint, wallNormal);
-		float dist = wallPlane.PlaneDot(player->GetActorLocation());
-
-		if (dist < 45.0f) {
-			// move player further from the wall
-			player->SetActorLocation(FMath::VInterpTo(player->GetActorLocation(), finalHitResult.ImpactPoint + 45.0f * wallNormal, DeltaTime, 20.0f));
-		}
-		else if (dist > 45.0f) {
-			// move player towards the wall
-			player->SetActorLocation(FMath::VInterpTo(player->GetActorLocation(), finalHitResult.ImpactPoint + 45.0f * wallNormal, DeltaTime, 20.0f));
-		}
 	}
 	else if (myPC->GetControlRotation().Roll != 0.0f) {
 		myPC->SetControlRotation(FMath::RInterpTo(myPC->GetControlRotation(), FRotator(myPC->GetControlRotation().Pitch, myPC->GetControlRotation().Yaw, 0.0f), DeltaTime, 10.0f));
@@ -220,7 +222,6 @@ void UWallRunning::StartWallRunning() {
 	player->GetCharacterMovement()->MaxWalkSpeed = 850.0f;
 	player->LockRailMovement();
 	player->ResetJumps();
-	UE_LOG(LogTemp, Warning, TEXT("STARTING WALLRUN"));
 }
 
 void UWallRunning::StopWallRunning() {
@@ -232,5 +233,4 @@ void UWallRunning::StopWallRunning() {
 	player->UnlockRailMovement();
 	directionLocked = false;
 	lastWallNormal = FVector::ZeroVector;
-	UE_LOG(LogTemp, Warning, TEXT("STOPPING WALLRUN"));
 }
