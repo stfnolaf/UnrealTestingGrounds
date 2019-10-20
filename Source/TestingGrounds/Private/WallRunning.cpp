@@ -126,12 +126,12 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 			playerDir = FVector::CrossProduct(wallNormal, FVector::DownVector);
 
 		player->SetRailDir(playerDir);
-		FHitResult finalCheck;
-		// enter wallrunning state IF
-		if (!onWall // we're not currently on a wall
-			&& player->GetMovementComponent()->IsFalling() // we are in the air
-			/*&& GetWorld()->LineTraceSingleByChannel(finalCheck, startLoc, startLoc + 5000.0f * player->GetActorForwardVector(), ECollisionChannel::ECC_Visibility)
-			&& finalHitResult.Actor.IsValid() && finalCheck.Actor.IsValid() && UKismetMathLibrary::EqualEqual_ObjectObject(finalHitResult.Actor.Get(), finalCheck.Actor.Get())*/) // and we are looking at the wall
+		bool acceptableAngle = (finalHitIsLeft && FMath::FindDeltaAngleDegrees(playerDir.Rotation().Yaw, myPC->GetControlRotation().Yaw) < 15.0f) || (!finalHitIsLeft && FMath::FindDeltaAngleDegrees(playerDir.Rotation().Yaw, myPC->GetControlRotation().Yaw) > -15.0f);
+		FHitResult groundCheck;
+		bool groundHit = GetWorld()->LineTraceSingleByChannel(groundCheck, player->GetActorLocation(), player->GetActorLocation() + FVector::DownVector * 150.0f, ECollisionChannel::ECC_Visibility);
+		if (!onWall
+			&& player->GetMovementComponent()->IsFalling()
+			&& !groundHit && acceptableAngle)
 		{
 			StartWallRunning();
 		}
@@ -220,7 +220,6 @@ void UWallRunning::StartWallRunning() {
 	player->GetCharacterMovement()->MaxWalkSpeed = 850.0f;
 	player->LockRailMovement();
 	player->ResetJumps();
-	timeStartNewRotateAnim = UKismetSystemLibrary::GetGameTimeInSeconds(GetWorld());
 	UE_LOG(LogTemp, Warning, TEXT("STARTING WALLRUN"));
 }
 
@@ -231,7 +230,6 @@ void UWallRunning::StopWallRunning() {
 	player->GetCharacterMovement()->AirControl = 0.5f;
 	player->GetCharacterMovement()->MaxWalkSpeed = 600.0f;
 	player->UnlockRailMovement();
-	timeStartNewRotateAnim = UKismetSystemLibrary::GetGameTimeInSeconds(GetWorld());
 	directionLocked = false;
 	lastWallNormal = FVector::ZeroVector;
 	UE_LOG(LogTemp, Warning, TEXT("STOPPING WALLRUN"));

@@ -34,8 +34,6 @@ protected:
 
 	void StopWallRunning();
 
-	float timeStartNewRotateAnim = 0.0f;
-
 	float timeToRotateOnWall = 0.25f;
 
 	float directionLocked = false;
