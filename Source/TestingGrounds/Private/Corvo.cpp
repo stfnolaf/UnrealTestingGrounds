@@ -17,7 +17,10 @@ void ACorvo::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GetComponents(abilities);
+	if (GetMesh() != nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("null"));
+	}
+	animInst = Cast<UCorvoAnimInstance>(GetMesh()->GetAnimInstance());
 } // end of BeginPlay()
 
 void ACorvo::MoveForward(float Value) {
@@ -32,14 +35,14 @@ void ACorvo::MoveForward(float Value) {
 
 void ACorvo::OnInitiateAbility()
 {
-	if(activeAbility < abilities.Num())
-		abilities[activeAbility]->OnInitiateAbility();
+	if(animInst != nullptr)
+		animInst->Aiming = true;
 }
 
 void ACorvo::OnReleaseAbility()
 {
-	if(activeAbility < abilities.Num())
-		abilities[activeAbility]->OnReleaseAbility();
+	if(animInst != nullptr)
+		animInst->Aiming = false;
 }
 
 void ACorvo::OnQuit()
@@ -159,10 +162,6 @@ void ACorvo::SetRailDir(FVector vect) {
 
 bool ACorvo::IsOnGround() {
 	return onGround;
-}
-
-UCableComponent* ACorvo::GetCable() {
-	return myCable;
 }
 
 UCapsuleComponent* ACorvo::GetCapsuleComponent() {

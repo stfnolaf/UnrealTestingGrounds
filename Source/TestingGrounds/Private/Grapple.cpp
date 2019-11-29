@@ -6,7 +6,7 @@
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 #include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
-#include "CableComponent.h"
+//#include "CableComponent.h"
 #include "DrawDebugHelpers.h"
 
 // Sets default values for this component's properties
@@ -32,10 +32,10 @@ void UGrapple::BeginPlay()
 	// ...
 	myPC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 
-	player->GetCable()->SetVisibility(false);
+	/*player->GetCable()->SetVisibility(false);
 	player->GetCable()->CableLength = 0.0f;
 	player->GetCable()->CableWidth = 2.0f;
-	player->GetCable()->EndLocation = FVector::ZeroVector;
+	player->GetCable()->EndLocation = FVector::ZeroVector;*/
 	player->GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &UGrapple::OnHitWall);
 }
 
@@ -50,12 +50,12 @@ void UGrapple::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 }
 
 void UGrapple::ShootCable(float deltaTime) {
-	player->GetCable()->SetVisibility(true);
+	//player->GetCable()->SetVisibility(true);
 	timeShootingGrapple += deltaTime;
 	if (timeShootingGrapple >= 0.5f)
 		return;
 	else
-		player->GetCable()->SetWorldLocation(FMath::VInterpTo(player->GetCable()->GetComponentLocation(), hookLocation, deltaTime, 30.0f));
+		//player->GetCable()->SetWorldLocation(FMath::VInterpTo(player->GetCable()->GetComponentLocation(), hookLocation, deltaTime, 30.0f));
 	UE_LOG(LogTemp, Warning, TEXT("REEEEEEEEEE"));
 }
 
@@ -98,9 +98,9 @@ void UGrapple::GrappleAfterDelay() {
 }
 
 void UGrapple::ResetGrapple() {
-	player->GetCable()->SetVisibility(false);
+	/*player->GetCable()->SetVisibility(false);
 	player->GetCable()->SetWorldLocation(player->GetActorLocation());
-	player->GetCable()->EndLocation = FVector::ZeroVector;
+	player->GetCable()->EndLocation = FVector::ZeroVector;*/
 	grapplingHookEnabled = false;
 	timeShootingGrapple = 0.0f;
 	FLatentActionInfo info;

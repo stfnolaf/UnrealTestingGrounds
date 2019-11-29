@@ -6,10 +6,10 @@
 #include "GameFramework/Character.h"
 #include "BlinkAbility.h"
 #include "Grapple.h"
+#include "CorvoAnimInstance.h"
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
 #include "Runtime/Engine/Classes/Components/BoxComponent.h"
 #include "Runtime/Engine/Classes/GameFramework/SpringArmComponent.h"
-#include "CableComponent.h"
 #include "Corvo.generated.h"
 
 UCLASS()
@@ -62,8 +62,7 @@ protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
 	USpringArmComponent* mySpringArm = nullptr;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
-	UCableComponent* myCable;
+	UCorvoAnimInstance* animInst = nullptr;
 
 public:	
 	// Called every frame
@@ -95,7 +94,4 @@ public:
 	void SetRailDir(FVector vect);
 
 	bool IsOnGround();
-
-	UCableComponent* GetCable();
-
 };
