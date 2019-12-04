@@ -18,13 +18,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
 		bool Aiming = false;
 
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
 		bool Throwing = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
 		bool Waiting = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
 		bool Knockback = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)

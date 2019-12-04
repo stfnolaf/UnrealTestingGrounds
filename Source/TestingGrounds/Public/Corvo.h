@@ -7,9 +7,11 @@
 #include "BlinkAbility.h"
 #include "Grapple.h"
 #include "CorvoAnimInstance.h"
+#include "Knife.h"
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
 #include "Runtime/Engine/Classes/Components/BoxComponent.h"
 #include "Runtime/Engine/Classes/GameFramework/SpringArmComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Corvo.generated.h"
 
 UCLASS()
@@ -42,6 +44,8 @@ protected:
 	void AddPitch(float Val);
 	void OnInitiateAbility();
 	void OnReleaseAbility();
+	void OnInitiateAttack();
+	void OnReleaseAttack();
 	void OnQuit();
 
 	TArray<UGrapple*> abilities;
@@ -59,10 +63,44 @@ protected:
 
 	FVector railDir = FVector();
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
-	USpringArmComponent* mySpringArm = nullptr;
-
 	UCorvoAnimInstance* animInst = nullptr;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = Mesh)
+	USkeletalMeshComponent* arms = nullptr;
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnKnife();
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AKnife> knifeClass;
+
+	AKnife* knife;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
+	bool hasKnife = true;
+
+	FTimerHandle knifeWaitHandle;
+
+	UFUNCTION()
+		void EndWaitForKnife();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
+		bool knifeInAir = false;
+
+	FVector fromLoc;
+	FVector hitLoc;
+	FVector heading;
+	FRotator rotation;
+	float z;
+	float knifeSpeed = 12000.0f;
+	float knifeRotationSpeed = 360.0f;
+	bool knifeReturn = false;
+	float halfDistance = 0.0f;
+	float currDistance = 0.0f;
+
+	UFUNCTION(BlueprintCallable, Category = KnifeThrowing)
+		void RecallKnife();
+
 
 public:	
 	// Called every frame
@@ -94,4 +132,7 @@ public:
 	void SetRailDir(FVector vect);
 
 	bool IsOnGround();
+
+	UFUNCTION(BlueprintCallable, Category = KnifeThrowing)
+		void ThrowKnife();
 };
