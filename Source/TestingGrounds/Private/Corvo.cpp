@@ -72,9 +72,9 @@ void ACorvo::OnInitiateAttack() {
 			waitTimerDelegate.BindUFunction(this, FName("EndWaitForKnife"));
 			GetWorldTimerManager().SetTimer(knifeWaitHandle, waitTimerDelegate, 0.2f, false);
 		}
-		else if (!knifeInAir) {
-			RecallKnife();
-		}
+	}
+	if (!hasKnife && !knifeInAir) {
+		RecallKnife();
 	}
 }
 
@@ -88,7 +88,7 @@ void ACorvo::ThrowKnife() {
 		fromLoc = knife->GetActorLocation();
 		hitLoc = fromLoc - hit.ImpactPoint;
 		UKismetMathLibrary::Vector_Normalize(hitLoc);
-		hitLoc *= 25.0f;
+		hitLoc *= 15.0f;
 		hitLoc += hit.ImpactPoint;
 		heading = hitLoc - fromLoc;
 		UKismetMathLibrary::Vector_Normalize(heading);
@@ -162,7 +162,7 @@ void ACorvo::Tick(float DeltaTime)
 				rotation,
 				true
 			);
-			if (currDistance <= 5.0f) {
+			if (currDistance <= 10.0f) {
 				knifeInAir = false;
 				knifeReturn = false;
 				hasKnife = true;
@@ -173,9 +173,9 @@ void ACorvo::Tick(float DeltaTime)
 			}
 		}
 		else {
-			rotation = UKismetMathLibrary::RInterpTo(rotation, UKismetMathLibrary::FindLookAtRotation(knife->GetActorLocation(), hitLoc), DeltaTime, knifeRotationSpeed);
+			rotation = UKismetMathLibrary::RInterpTo(rotation, UKismetMathLibrary::FindLookAtRotation(knife->GetActorLocation(), hitLoc).Add(0.0f, -90.0f, 0.0f), DeltaTime, knifeRotationSpeed);
 			float distToHit = UKismetMathLibrary::Vector_Distance(knife->GetActorLocation(), hitLoc);
-			if (distToHit <= 7.0f) {
+			if (distToHit <= 3.0f) {
 				knifeInAir = false;
 				animInst->Throwing = false;
 			}

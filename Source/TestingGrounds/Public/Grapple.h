@@ -26,7 +26,7 @@ protected:
 
 	FVector hookLocation = FVector();
 
-	void ShootCable(float deltaTime);
+	void ShootCable();
 
 	UFUNCTION(BlueprintCallable, Category = "Grapple")
 	void ResetGrapple();

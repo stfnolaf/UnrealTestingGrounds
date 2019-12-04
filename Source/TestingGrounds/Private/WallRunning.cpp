@@ -136,7 +136,6 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 			StartWallRunning();
 		}
 	}
-	APlayerController* myPC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 
 	if (onWall) {
 

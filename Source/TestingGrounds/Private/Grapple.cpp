@@ -49,7 +49,7 @@ void UGrapple::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 	deltaTime = DeltaTime;
 }
 
-void UGrapple::ShootCable(float deltaTime) {
+void UGrapple::ShootCable() {
 	//player->GetCable()->SetVisibility(true);
 	timeShootingGrapple += deltaTime;
 	if (timeShootingGrapple >= 0.5f)
@@ -72,7 +72,7 @@ void UGrapple::OnInitiateAbility() {
 				ECollisionChannel::ECC_Visibility)
 			) {
 			hookLocation = cableHit.Location;
-			ShootCable(deltaTime);
+			ShootCable();
 			player->LaunchCharacter(FVector::UpVector * 500.0f, true, true);
 			FLatentActionInfo info;
 			info.CallbackTarget = this;
