@@ -66,44 +66,24 @@ void ACorvo::OnReleaseAbility()
 
 void ACorvo::OnInitiateAttack() {
 	if (animInst->Aiming) {
-		if (hasKnife) {
-			animInst->Throwing = true;
-			FTimerDelegate waitTimerDelegate;
-			waitTimerDelegate.BindUFunction(this, FName("EndWaitForKnife"));
-			GetWorldTimerManager().SetTimer(knifeWaitHandle, waitTimerDelegate, 0.2f, false);
-		}
+		ThrowKnife();
 	}
-	if (!hasKnife && !knifeInAir) {
+	else if (knifeThrown) {
 		RecallKnife();
 	}
 }
 
 void ACorvo::ThrowKnife() {
-	hasKnife = false;
-	FHitResult hit;
-	FVector handLoc = arms->GetSocketLocation(FName("knife_socket"));
-	TArray<AActor*> list = TArray<AActor*>();
-	list.Add(this);
-	if (UKismetSystemLibrary::LineTraceSingle(GetWorld(), handLoc, handLoc + myCamera->GetForwardVector() * 10000.0f, ETraceTypeQuery::TraceTypeQuery1, false, list, EDrawDebugTrace::None, hit, true, FLinearColor::Red, FLinearColor::Green, 5.0f)) {
-		fromLoc = knife->GetActorLocation();
-		hitLoc = fromLoc - hit.ImpactPoint;
-		UKismetMathLibrary::Vector_Normalize(hitLoc);
-		hitLoc *= 15.0f;
-		hitLoc += hit.ImpactPoint;
-		heading = hitLoc - fromLoc;
-		UKismetMathLibrary::Vector_Normalize(heading);
-		rotation = knife->GetActorRotation();
-		z = UKismetMathLibrary::FindLookAtRotation(knife->GetActorLocation(), hitLoc).Yaw;
-		knifeInAir = true;
+	if (!knifeThrown) {
+		animInst->Throwing = true;
 		knife->DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld, false));
+		knife->Throw(myCamera->GetComponentRotation(), myCamera->GetForwardVector(), myCamera->GetComponentLocation(), 2500.0f);
+		knifeThrown = true;
 	}
 }
 
 void ACorvo::RecallKnife() {
 	knife->GetActorRotation();
-	knifeReturn = true;
-	knifeInAir = true;
-	halfDistance = UKismetMathLibrary::Vector_Distance(arms->GetSocketLocation(FName("knife_socket")), knife->GetActorLocation()) / 2.0f;
 }
 
 void ACorvo::EndWaitForKnife() {
@@ -147,47 +127,6 @@ void ACorvo::AddPitch(float Value) {
 void ACorvo::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	if (knifeInAir) {
-		if (knifeReturn) {
-			currDistance = UKismetMathLibrary::Vector_Distance(knife->GetActorLocation(), arms->GetSocketLocation(FName("knife_socket")));
-			rotation = UKismetMathLibrary::RInterpTo_Constant(rotation, FRotator(rotation.Pitch + 10.0f, z, 90.0f), DeltaTime, 500.0f);
-			knife->SetActorLocationAndRotation(
-				UKismetMathLibrary::VInterpTo_Constant(
-					knife->GetActorLocation(),
-					myCamera->GetRightVector() * UKismetMathLibrary::Lerp(halfDistance, 0.0f, FMath::Clamp(FMath::Abs(halfDistance - currDistance) / (halfDistance / 2.0f), 0.0f, 1.0f)) + arms->GetSocketLocation(FName("knife_socket")),
-					DeltaTime,
-					currDistance <= 200.0f ? knifeSpeed * 0.25f : knifeSpeed * 0.125f
-				),
-				rotation,
-				true
-			);
-			if (currDistance <= 10.0f) {
-				knifeInAir = false;
-				knifeReturn = false;
-				hasKnife = true;
-				animInst->Waiting = false;
-				//animInst->Knockback = true;
-				//UGameplayStatics::PlayWorldCameraShake(GetWorld(), CatchCameraShake, GetActorLocation(), 0.0f, 500.0f);
-				knife->AttachToComponent(arms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("knife_socket"));
-			}
-		}
-		else {
-			rotation = UKismetMathLibrary::RInterpTo(rotation, UKismetMathLibrary::FindLookAtRotation(knife->GetActorLocation(), hitLoc).Add(0.0f, -90.0f, 0.0f), DeltaTime, knifeRotationSpeed);
-			float distToHit = UKismetMathLibrary::Vector_Distance(knife->GetActorLocation(), hitLoc);
-			if (distToHit <= 3.0f) {
-				knifeInAir = false;
-				animInst->Throwing = false;
-			}
-			else {
-				knife->SetActorLocationAndRotation(
-					UKismetMathLibrary::VInterpTo_Constant(knife->GetActorLocation(), hitLoc, DeltaTime, knifeSpeed),
-					rotation,
-					true
-				);
-			}
-		}
-	}
 }
 
 // Called to bind functionality to input

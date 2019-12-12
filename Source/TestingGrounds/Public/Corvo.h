@@ -77,29 +77,18 @@ protected:
 	AKnife* knife;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
-	bool hasKnife = true;
+	bool knifeThrown = true;
 
 	FTimerHandle knifeWaitHandle;
 
 	UFUNCTION()
 		void EndWaitForKnife();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
-		bool knifeInAir = false;
-
-	FVector fromLoc;
-	FVector hitLoc;
-	FVector heading;
-	FRotator rotation;
-	float z;
-	float knifeSpeed = 12000.0f;
-	float knifeRotationSpeed = 360.0f;
-	bool knifeReturn = false;
-	float halfDistance = 0.0f;
-	float currDistance = 0.0f;
+	UFUNCTION(BlueprintCallable, Category = KnifeThrowing)
+	void ThrowKnife();
 
 	UFUNCTION(BlueprintCallable, Category = KnifeThrowing)
-		void RecallKnife();
+	void RecallKnife();
 
 
 public:	
@@ -132,7 +121,4 @@ public:
 	void SetRailDir(FVector vect);
 
 	bool IsOnGround();
-
-	UFUNCTION(BlueprintCallable, Category = KnifeThrowing)
-		void ThrowKnife();
 };
