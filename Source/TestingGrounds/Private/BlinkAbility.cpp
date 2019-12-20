@@ -53,7 +53,7 @@ void UBlinkAbility::BeginPlay()
 		}
 
 		if (Hand != nullptr) {
-			handStartPos = Hand->RelativeLocation;
+			handStartPos = Hand->GetRelativeLocation();
 			handOffsetPos = FVector(handStartPos.X, handStartPos.Y, handStartPos.Z + handZOffset);
 		}
 

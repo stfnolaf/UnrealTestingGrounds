@@ -77,7 +77,7 @@ protected:
 	AKnife* knife;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
-	bool knifeThrown = true;
+	bool knifeThrown = false;
 
 	FTimerHandle knifeWaitHandle;
 

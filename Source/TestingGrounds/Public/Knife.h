@@ -8,6 +8,11 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/TimelineComponent.h"
 #include "Containers/EnumAsByte.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Engine/World.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "Kismet/GameplayStatics.h"
 #include "Knife.generated.h"
 
 UENUM(BlueprintType)
@@ -26,11 +31,11 @@ class TESTINGGROUNDS_API AKnife : public AActor
 
 protected:
 
-	FRotator CameraStartRotation = FRotator();
+	FRotator CameraStartRotation = FRotator::ZeroRotator;
 
-	FVector ThrowDirection = FVector();
+	FVector ThrowDirection = FVector::ZeroVector;
 
-	FVector CameraLocationAtThrow = FVector();
+	FVector CameraLocationAtThrow = FVector::ZeroVector;
 
 	float KnifeThrowSpeed = 2500.0f;
 
@@ -38,10 +43,25 @@ protected:
 
 	float KnifeSpinRate = 2.5f;
 
+	float KnifeThrowTraceDistance = 9.0f;
+
+	FVector ImpactLocation = FVector::ZeroVector;
+
+	FVector ImpactNormal = FVector::ZeroVector;
+
+	FName HitBoneName = FName("");
+
+	EPhysicalSurface SurfaceType = EPhysicalSurface::SurfaceType1;
+
 	EKnifeState KnifeState = EKnifeState::VE_Idle;
+
+	float ZAdjustment = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Pivots)
 	USceneComponent* PivotPoint;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Pivots)
+	USceneComponent* LodgePoint;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
 	UProjectileMovementComponent* ProjectileMovementVar;
@@ -93,6 +113,14 @@ protected:
 	void LaunchKnife();
 
 	void StartKnifeRotForward();
+
+	void LodgeKnife();
+
+	void StopKnifeMoving();
+
+	float AdjustKnifeImpactPitch(float InclinedSurfaceRange, float RegularSurfaceRange);
+
+	FVector AdjustKnifeImpactLocation();
 
 public:	
 	// Called every frame

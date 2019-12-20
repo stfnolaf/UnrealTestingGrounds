@@ -54,7 +54,7 @@ void ACorvo::MoveForward(float Value) {
 
 void ACorvo::OnInitiateAbility()
 {
-	if(animInst != nullptr)
+	if(animInst != nullptr && !knifeThrown)
 		animInst->Aiming = true;
 }
 
@@ -65,8 +65,8 @@ void ACorvo::OnReleaseAbility()
 }
 
 void ACorvo::OnInitiateAttack() {
-	if (animInst->Aiming) {
-		ThrowKnife();
+	if (animInst->Aiming && !knifeThrown) {
+		animInst->Throwing = true;
 	}
 	else if (knifeThrown) {
 		RecallKnife();
@@ -75,10 +75,11 @@ void ACorvo::OnInitiateAttack() {
 
 void ACorvo::ThrowKnife() {
 	if (!knifeThrown) {
-		animInst->Throwing = true;
 		knife->DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld, false));
 		knife->Throw(myCamera->GetComponentRotation(), myCamera->GetForwardVector(), myCamera->GetComponentLocation(), 2500.0f);
 		knifeThrown = true;
+		animInst->Throwing = false;
+		animInst->Aiming = false;
 	}
 }
 

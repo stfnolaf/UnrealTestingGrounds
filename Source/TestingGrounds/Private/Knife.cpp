@@ -28,11 +28,8 @@ void AKnife::BeginPlay()
 		this->BlueprintCreatedComponents.Add(KnifeRotTimeline);
 		KnifeRotTimeline->SetNetAddressable();
 
-		KnifeRotTimeline->SetPropertySetObject(this);
-		KnifeRotTimeline->SetDirectionPropertyName(FName("KnifeRotTimelineDirection"));
-
 		KnifeRotTimeline->SetLooping(true);
-		KnifeRotTimeline->SetTimelineLength(1.0f);
+		KnifeRotTimeline->SetTimelineLength(0.66f);
 		KnifeRotTimeline->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
 
 		KnifeRotTimeline->SetPlaybackPosition(0.0f, false);
@@ -51,11 +48,8 @@ void AKnife::BeginPlay()
 		this->BlueprintCreatedComponents.Add(KnifeThrowTraceTimeline);
 		KnifeThrowTraceTimeline->SetNetAddressable();
 
-		KnifeThrowTraceTimeline->SetPropertySetObject(this);
-		KnifeThrowTraceTimeline->SetDirectionPropertyName(FName("KnifeThrowTraceTimelineDirection"));
-
 		KnifeThrowTraceTimeline->SetLooping(true);
-		KnifeThrowTraceTimeline->SetTimelineLength(5.0f);
+		KnifeThrowTraceTimeline->SetTimelineLength(1.2f);
 		KnifeThrowTraceTimeline->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
 
 		KnifeThrowTraceTimeline->SetPlaybackPosition(0.0f, false);
@@ -67,6 +61,8 @@ void AKnife::BeginPlay()
 
 		KnifeThrowTraceTimeline->RegisterComponent();
 	}
+
+	//UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.25f);
 }
 
 // Called every frame
@@ -76,6 +72,10 @@ void AKnife::Tick(float DeltaTime)
 
 	if (KnifeRotTimeline != nullptr) {
 		KnifeRotTimeline->TickComponent(DeltaTime, ELevelTick::LEVELTICK_TimeOnly, NULL);
+	}
+
+	if (KnifeThrowTraceTimeline != nullptr) {
+		KnifeThrowTraceTimeline->TickComponent(DeltaTime, ELevelTick::LEVELTICK_TimeOnly, NULL);
 	}
 
 }
@@ -92,7 +92,8 @@ void AKnife::Throw(FRotator CameraRotation, FVector ThrowDirectionVector, FVecto
 
 void AKnife::SnapKnifeToStartPosition(FRotator StartRotation, FVector ThrowDirectionVector, FVector CameraLocation)
 {
-	this->SetActorLocationAndRotation((CameraLocation + 250.0f * ThrowDirectionVector) - (PivotPoint->RelativeLocation), StartRotation, false, nullptr, ETeleportType::None);
+	//this->SetActorLocationAndRotation((CameraLocation + 250.0f * ThrowDirectionVector) - (PivotPoint->GetRelativeLocation()), StartRotation, false, nullptr, ETeleportType::None);
+	this->SetActorRotation(StartRotation);
 }
 
 void AKnife::LaunchKnife() {
@@ -113,6 +114,34 @@ void AKnife::StartKnifeRotForward() {
 	}
 }
 
+void AKnife::LodgeKnife() {
+	StopKnifeMoving();
+	PivotPoint->SetRelativeRotation(FRotator::ZeroRotator);
+	SetActorRotation(CameraStartRotation);
+	LodgePoint->SetRelativeRotation(FRotator(AdjustKnifeImpactPitch(UKismetMathLibrary::RandomFloatInRange(-30.0f, -55.0f), UKismetMathLibrary::RandomFloatInRange(-5.0f, -25.0f)), 0.0f, UKismetMathLibrary::RandomFloatInRange(-3.0f, -8.0f)));
+	SetActorLocation(AdjustKnifeImpactLocation());
+	KnifeState = EKnifeState::VE_LodgedInSomething;
+}
+
+FVector AKnife::AdjustKnifeImpactLocation() {
+	float pitch = UKismetMathLibrary::MakeRotationFromAxes(ImpactNormal, FVector::ZeroVector, FVector::ZeroVector).Pitch;
+	ZAdjustment = (pitch > 0.0f ? pitch : 0.0f) - 90.0f;
+	ZAdjustment /= 90.0f;
+	ZAdjustment *= 10.0f;
+	return ImpactLocation /*+ FVector(0.0f, 0.0f, ZAdjustment)*/ + (GetActorLocation() - LodgePoint->GetComponentLocation());
+}
+
+float AKnife::AdjustKnifeImpactPitch(float InclinedSurfaceRange, float RegularSurfaceRange) {
+	float pitch = UKismetMathLibrary::MakeRotationFromAxes(ImpactNormal, FVector::ZeroVector, FVector::ZeroVector).Pitch;
+	return (pitch > 0.0f ? RegularSurfaceRange : InclinedSurfaceRange) - pitch;
+}
+
+void AKnife::StopKnifeMoving() {
+	ProjectileMovementVar->Deactivate();
+	check(KnifeRotTimeline);
+	KnifeRotTimeline->Stop();
+}
+
 void AKnife::KnifeRotTimelineCallback(float val) {
 	PivotPoint->SetRelativeRotation(FRotator(val * -360.0f, 0.0f, 0.0f));
 }
@@ -123,6 +152,31 @@ void AKnife::KnifeRotTimelineFinishedCallback() {
 
 void AKnife::KnifeThrowTraceTimelineCallback(float val) {
 	// TODO: IMPLEMENT KNIFE THROW LOOP
+	ProjectileMovementVar->ProjectileGravityScale = val;
+	FHitResult knifeHit;
+	TArray<AActor*> Actors;
+	FVector vel = GetVelocity();
+	UKismetMathLibrary::Vector_Normalize(vel, 0.0001f);
+	if (UKismetSystemLibrary::LineTraceSingle(GetWorld(), GetActorLocation(), GetActorLocation() + (vel * KnifeThrowTraceDistance), ETraceTypeQuery::TraceTypeQuery1, false, Actors, EDrawDebugTrace::None, knifeHit, true, FLinearColor::Red, FLinearColor::Green, 0.0f)) {
+		if (knifeHit.bBlockingHit) {
+			ImpactLocation = knifeHit.ImpactPoint;
+			ImpactNormal = knifeHit.ImpactNormal;
+			HitBoneName = knifeHit.BoneName;
+			if (knifeHit.PhysMaterial.IsValid()) {
+				UPhysicalMaterial* temp = knifeHit.PhysMaterial.Get();
+				SurfaceType = temp->SurfaceType;
+				// if hit actor can be cast to a destructible, handle destruction
+				// else
+				check(KnifeThrowTraceTimeline);
+				KnifeThrowTraceTimeline->Stop();
+				ProjectileMovementVar->Deactivate();
+				// if hit actor can be cast to an AI, handle hit
+				// else
+				LodgeKnife();
+			}
+
+		}
+	}
 }
 
 void AKnife::KnifeThrowTraceTimelineFinishedCallback() {
