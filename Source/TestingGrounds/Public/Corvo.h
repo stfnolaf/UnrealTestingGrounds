@@ -26,9 +26,6 @@ public:
 protected:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
-	UStaticMeshComponent* Hand = nullptr;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
 	UCapsuleComponent* myCapsule;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
@@ -98,7 +95,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UStaticMeshComponent* GetHand();
+	USkeletalMeshComponent* GetMyMesh();
 
 	UCameraComponent* GetCamera();
 

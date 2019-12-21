@@ -13,6 +13,7 @@
 #include "Engine/World.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/StaticMeshComponent.h"
 #include "Knife.generated.h"
 
 UENUM(BlueprintType)
@@ -31,6 +32,8 @@ class TESTINGGROUNDS_API AKnife : public AActor
 
 protected:
 
+	class ACorvo* Owner = nullptr;
+
 	FRotator CameraStartRotation = FRotator::ZeroRotator;
 
 	FVector ThrowDirection = FVector::ZeroVector;
@@ -45,9 +48,17 @@ protected:
 
 	float KnifeThrowTraceDistance = 9.0f;
 
+	float MaxCalculationDistance = 3000.0f;
+
+	float DistanceFromCharacter = 0.0f;
+
 	FVector ImpactLocation = FVector::ZeroVector;
 
 	FVector ImpactNormal = FVector::ZeroVector;
+
+	FVector InitialLocation = FVector::ZeroVector;
+
+	FRotator InitialRotation = FRotator::ZeroRotator;
 
 	FName HitBoneName = FName("");
 
@@ -65,6 +76,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
 	UProjectileMovementComponent* ProjectileMovementVar;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Mesh)
+	UStaticMeshComponent* KnifeMeshVar;
 
 	// KNIFE ROTATION TIMELINE VARS
 	UPROPERTY()
@@ -122,10 +136,18 @@ protected:
 
 	FVector AdjustKnifeImpactLocation();
 
+	float GetClampedKnifeDistanceFromCharacter(float maxDist);
+
+	void AdjustKnifeReturnLocation();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	bool InitializeOwner(AActor* actor);
+
 	void Throw(FRotator CameraRotation, FVector ThrowDirectionVector, FVector CameraLocation, float ThrowSpeed);
+
+	void Recall();
 
 };

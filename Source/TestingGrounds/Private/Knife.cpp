@@ -2,6 +2,7 @@
 
 
 #include "Knife.h"
+#include "Corvo.h"
 
 // Sets default values
 AKnife::AKnife()
@@ -9,6 +10,14 @@ AKnife::AKnife()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+}
+
+bool AKnife::InitializeOwner(AActor* actor) {
+	Owner = Cast<ACorvo>(actor);
+	if (Owner == nullptr) {
+		return false;
+	}
+	return true;
 }
 
 // Called when the game starts or when spawned
@@ -99,7 +108,7 @@ void AKnife::SnapKnifeToStartPosition(FRotator StartRotation, FVector ThrowDirec
 void AKnife::LaunchKnife() {
 	ProjectileMovementVar->Velocity = ThrowDirection * KnifeThrowSpeed;
 	ProjectileMovementVar->Activate();
-	StartKnifeRotForward();
+	//StartKnifeRotForward();
 	KnifeState = EKnifeState::VE_Launched;
 	ProjectileMovementVar->ProjectileGravityScale = 0.0f;
 	if (KnifeThrowTraceTimeline != NULL) {
@@ -181,4 +190,26 @@ void AKnife::KnifeThrowTraceTimelineCallback(float val) {
 
 void AKnife::KnifeThrowTraceTimelineFinishedCallback() {
 	// TODO: IMPLEMENT KNIFE STOP
+}
+
+void AKnife::Recall() {
+	KnifeThrowTraceTimeline->Stop();
+	KnifeMeshVar->SetVisibility(true, false);
+	ZAdjustment = 10.0f;
+	KnifeState = EKnifeState::VE_Returning;
+	DistanceFromCharacter = GetClampedKnifeDistanceFromCharacter(MaxCalculationDistance);
+	AdjustKnifeReturnLocation();
+	InitialLocation = GetActorLocation();
+	InitialRotation = GetActorRotation();
+	CameraStartRotation = Owner->GetCamera()->GetComponentRotation();
+	LodgePoint->SetRelativeLocation(FVector::ZeroVector);
+}
+
+float AKnife::GetClampedKnifeDistanceFromCharacter(float maxDist) {
+	check(Owner);
+	return UKismetMathLibrary::FClamp(UKismetMathLibrary::Vector_Distance(GetActorLocation(), Owner->GetMyMesh()->GetSocketLocation(FName("knife_socket"))), 0.0f, maxDist);
+}
+
+void AKnife::AdjustKnifeReturnLocation() {
+	SetActorLocation(GetActorLocation() + FVector(0.0f, 0.0f, (((ZAdjustment / 10.0f) - 1.0f) * 30.0f) + 20.0f));
 }

@@ -38,6 +38,7 @@ void ACorvo::SpawnKnife() {
 			FVector spawnLocation = GetActorLocation();
 			knife = world->SpawnActor<AKnife>(knifeClass, spawnLocation, rotator, spawnParams);
 			knife->AttachToComponent(arms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("knife_socket"));
+			knife->InitializeOwner(this);
 		}
 	}
 }
@@ -84,7 +85,7 @@ void ACorvo::ThrowKnife() {
 }
 
 void ACorvo::RecallKnife() {
-	knife->GetActorRotation();
+	
 }
 
 void ACorvo::EndWaitForKnife() {
@@ -159,8 +160,8 @@ void ACorvo::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 }
 
-UStaticMeshComponent* ACorvo::GetHand() {
-	return Hand;
+USkeletalMeshComponent* ACorvo::GetMyMesh() {
+	return arms;
 }
 
 UCameraComponent* ACorvo::GetCamera() {

@@ -44,7 +44,6 @@ void UBlinkAbility::BeginPlay()
 
 		ACorvo* corvo = Cast<ACorvo>(GetOwner());
 		if (corvo) {
-			Hand = corvo->GetHand();
 			corvoCam = corvo->GetCamera();
 		}
 
