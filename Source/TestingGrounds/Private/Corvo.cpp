@@ -85,7 +85,7 @@ void ACorvo::ThrowKnife() {
 }
 
 void ACorvo::RecallKnife() {
-	
+	knife->Recall();
 }
 
 void ACorvo::EndWaitForKnife() {

@@ -14,6 +14,8 @@
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SplineComponent.h"
+#include "WeaponReturnPath.h"
 #include "Knife.generated.h"
 
 UENUM(BlueprintType)
@@ -79,6 +81,11 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Mesh)
 	UStaticMeshComponent* KnifeMeshVar;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AActor> ReturnPathClass;
+
+	AWeaponReturnPath* ReturnPath = nullptr;
 
 	// KNIFE ROTATION TIMELINE VARS
 	UPROPERTY()

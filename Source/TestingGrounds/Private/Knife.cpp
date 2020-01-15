@@ -193,7 +193,19 @@ void AKnife::KnifeThrowTraceTimelineFinishedCallback() {
 }
 
 void AKnife::Recall() {
-	KnifeThrowTraceTimeline->Stop();
+	if (ReturnPathClass) {
+		UWorld* world = GetWorld();
+		if (world) {
+			FActorSpawnParameters spawnParams;
+			spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			//spawnParams.Owner = this;
+			FRotator rotator = FRotator::ZeroRotator;
+			FVector spawnLocation = GetActorLocation();
+			ReturnPath = world->SpawnActor<AWeaponReturnPath>(ReturnPathClass, spawnLocation, rotator, spawnParams);
+			UE_LOG(LogTemp, Warning, TEXT("spawned return path"));
+		}
+	}
+	/*KnifeThrowTraceTimeline->Stop();
 	KnifeMeshVar->SetVisibility(true, false);
 	ZAdjustment = 10.0f;
 	KnifeState = EKnifeState::VE_Returning;
@@ -202,7 +214,7 @@ void AKnife::Recall() {
 	InitialLocation = GetActorLocation();
 	InitialRotation = GetActorRotation();
 	CameraStartRotation = Owner->GetCamera()->GetComponentRotation();
-	LodgePoint->SetRelativeLocation(FVector::ZeroVector);
+	LodgePoint->SetRelativeLocation(FVector::ZeroVector);*/
 }
 
 float AKnife::GetClampedKnifeDistanceFromCharacter(float maxDist) {
