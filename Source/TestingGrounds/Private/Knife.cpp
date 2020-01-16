@@ -202,7 +202,8 @@ void AKnife::Recall() {
 			FRotator rotator = FRotator::ZeroRotator;
 			FVector spawnLocation = GetActorLocation();
 			ReturnPath = world->SpawnActor<AWeaponReturnPath>(ReturnPathClass, spawnLocation, rotator, spawnParams);
-			UE_LOG(LogTemp, Warning, TEXT("spawned return path"));
+			ReturnPath->GetSpline()->ClearSplinePoints();
+			UE_LOG(LogTemp, Warning, TEXT("spawned return path with %d points"), ReturnPath->GetSpline()->GetNumberOfSplinePoints());
 		}
 	}
 	/*KnifeThrowTraceTimeline->Stop();
