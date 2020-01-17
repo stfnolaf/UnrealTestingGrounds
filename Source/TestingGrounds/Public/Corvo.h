@@ -10,7 +10,6 @@
 #include "Knife.h"
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
 #include "Runtime/Engine/Classes/Components/BoxComponent.h"
-#include "Runtime/Engine/Classes/GameFramework/SpringArmComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Corvo.generated.h"
 
@@ -25,11 +24,17 @@ public:
 
 protected:
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
-	UCapsuleComponent* myCapsule;
+	UPROPERTY(VisibleDefaultsOnly)
+	class USpringArmComponent* SpringArm;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Corvo")
-	UCameraComponent* myCamera = nullptr;
+	UPROPERTY(VisibleDefaultsOnly)
+	USpringArmComponent* ArmController;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = Camera)
+	UCameraComponent* PlayerCamera;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+	USkeletalMeshComponent* ArmsMesh;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -62,9 +67,6 @@ protected:
 
 	UCorvoAnimInstance* animInst = nullptr;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = Mesh)
-	USkeletalMeshComponent* arms = nullptr;
-
 	UFUNCTION(BlueprintCallable)
 	void SpawnKnife();
 
@@ -74,7 +76,7 @@ protected:
 	AKnife* knife;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
-	bool knifeThrown = false;
+	bool knifeThrown = true;
 
 	FTimerHandle knifeWaitHandle;
 
@@ -98,8 +100,6 @@ public:
 	USkeletalMeshComponent* GetMyMesh();
 
 	UCameraComponent* GetCamera();
-
-	UCapsuleComponent* GetCapsuleComponent();
 
 	virtual void Landed(const FHitResult& hit) override;
 

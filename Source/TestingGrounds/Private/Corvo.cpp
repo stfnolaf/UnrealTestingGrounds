@@ -6,12 +6,33 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Runtime/Engine/Public/TimerManager.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
+#include "Runtime/Engine/Classes/GameFramework/SpringArmComponent.h"
 
 // Sets default values
 ACorvo::ACorvo()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Yaw Controller"));
+	SpringArm->TargetArmLength = 0.0f;
+	SpringArm->SetupAttachment(GetCapsuleComponent());
+	SpringArm->SetRelativeLocation(FVector(0.0f, 0.0f, 50.0f));
+	SpringArm->bUsePawnControlRotation = true;
+
+	PlayerCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Player Camera"));
+	PlayerCamera->FieldOfView = 106.0f;
+	PlayerCamera->SetupAttachment(SpringArm);
+
+	ArmController = CreateDefaultSubobject<USpringArmComponent>(TEXT("Pitch Controller"));
+	ArmController->TargetArmLength = 0.0f;
+	ArmController->SetupAttachment(PlayerCamera);
+	ArmController->SetRelativeLocation(FVector(0.0f, 0.0f, -50.0f));
+
+	ArmsMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Arms Mesh"));
+	ArmsMesh->SetupAttachment(ArmController);
+	ArmsMesh->SetRelativeLocation(FVector(-18.0f, 0.0f, -112.0f));
+	ArmsMesh->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
 } // end of constructor
 
 // Called when the game starts or when spawned
@@ -19,9 +40,9 @@ void ACorvo::BeginPlay()
 {
 	Super::BeginPlay();
 
-	arms->SetOnlyOwnerSee(true);
+	ArmsMesh->SetOnlyOwnerSee(true);
 	
-	animInst = Cast<UCorvoAnimInstance>(arms->GetAnimInstance());
+	animInst = Cast<UCorvoAnimInstance>(ArmsMesh->GetAnimInstance());
 	check(animInst);
 
 	SpawnKnife();
@@ -37,8 +58,9 @@ void ACorvo::SpawnKnife() {
 			FRotator rotator = GetActorRotation();
 			FVector spawnLocation = GetActorLocation();
 			knife = world->SpawnActor<AKnife>(knifeClass, spawnLocation, rotator, spawnParams);
-			knife->AttachToComponent(arms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("knife_socket"));
+			knife->AttachToComponent(ArmsMesh, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("knife_socket"));
 			knife->InitializeOwner(this);
+			knifeThrown = false;
 		}
 	}
 }
@@ -77,7 +99,7 @@ void ACorvo::OnInitiateAttack() {
 void ACorvo::ThrowKnife() {
 	if (!knifeThrown) {
 		knife->DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld, false));
-		knife->Throw(myCamera->GetComponentRotation(), myCamera->GetForwardVector(), myCamera->GetComponentLocation(), 2500.0f);
+		knife->Throw(PlayerCamera->GetComponentRotation(), PlayerCamera->GetForwardVector(), PlayerCamera->GetComponentLocation(), 2500.0f);
 		knifeThrown = true;
 		animInst->Throwing = false;
 		animInst->Aiming = false;
@@ -161,11 +183,11 @@ void ACorvo::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 }
 
 USkeletalMeshComponent* ACorvo::GetMyMesh() {
-	return arms;
+	return ArmsMesh;
 }
 
 UCameraComponent* ACorvo::GetCamera() {
-	return myCamera;
+	return PlayerCamera;
 }
 
 void ACorvo::MyJump() {
@@ -216,8 +238,4 @@ void ACorvo::SetRailDir(FVector vect) {
 
 bool ACorvo::IsOnGround() {
 	return onGround;
-}
-
-UCapsuleComponent* ACorvo::GetCapsuleComponent() {
-	return myCapsule;
 }
