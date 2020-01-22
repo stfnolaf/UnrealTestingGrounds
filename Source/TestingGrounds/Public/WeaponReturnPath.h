@@ -22,10 +22,20 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Path")
 	class USplineComponent* Spline;
 
+	class AKnife* Weapon = nullptr;
+
+	class ACorvo* Target = nullptr;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	USplineComponent* GetSpline();
+
+	void SetKnifeOwner(AKnife* owner);
+
+	void SetTarget(ACorvo* owner);
+
+	void UpdatePath();
 
 };
