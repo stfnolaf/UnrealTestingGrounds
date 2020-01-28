@@ -24,6 +24,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
 		bool Waiting = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
+		FVector ElbowPosition = FVector(-27.107f, 31.697f, 127.855f);
+
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
 		bool Knockback = false;
 

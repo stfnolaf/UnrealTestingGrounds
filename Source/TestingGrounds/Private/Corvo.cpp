@@ -108,6 +108,7 @@ void ACorvo::ThrowKnife() {
 
 void ACorvo::RecallKnife() {
 	knife->Recall();
+	animInst->Waiting = true;
 }
 
 void ACorvo::EndWaitForKnife() {
