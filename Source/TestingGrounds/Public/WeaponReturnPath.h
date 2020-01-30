@@ -19,6 +19,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	float InitialDistToTarget = 0.0f;
+
 	UPROPERTY(EditAnywhere, Category = "Path")
 	class USplineComponent* Spline;
 
@@ -32,9 +34,7 @@ public:
 
 	USplineComponent* GetSpline();
 
-	void SetKnifeOwner(AKnife* owner);
-
-	void SetTarget(ACorvo* owner);
+	void SetKnifeOwnerAndTarget(AKnife* weapons, ACorvo* owner);
 
 	void UpdatePath();
 

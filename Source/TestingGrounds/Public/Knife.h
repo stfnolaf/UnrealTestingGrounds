@@ -119,6 +119,22 @@ protected:
 	UPROPERTY()
 	TEnumAsByte<ETimelineDirection::Type> KnifeThrowTraceTimelineDirection;
 
+	// KNIFE RETURN TIMELINE VARS
+	UPROPERTY()
+	UTimelineComponent* KnifeReturnTraceTimeline = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	UCurveFloat* KnifeReturnTraceCurve = nullptr;
+
+	UFUNCTION()
+	void KnifeReturnTraceTimelineCallback(float val);
+
+	UFUNCTION()
+	void KnifeReturnTraceTimelineFinishedCallback();
+
+	UPROPERTY()
+	TEnumAsByte<ETimelineDirection::Type> KnifeReturnTraceTimelineDirection;
+
 
 	
 public:	

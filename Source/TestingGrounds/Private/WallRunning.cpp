@@ -61,9 +61,9 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 	FHitResult finalHitResult;
 	bool finalHitIsLeft = false;
 
-	float lineTraceDist = 55.0f;
+	float lineTraceDist = player->GetCapsuleComponent()->GetScaledCapsuleRadius() * 1.14f;
 	if (onWall)
-		lineTraceDist = 100.0f;
+		lineTraceDist = 114.4f;
 	
 	contactLeft = GetWorld()->LineTraceSingleByChannel(leftHit, startLoc, startLoc - lineTraceDist * rightVect, ECollisionChannel::ECC_Visibility);
 	if(!contactLeft && directionLocked || (contactLeft && leftHit.Actor.IsValid() && !leftHit.Actor.Get()->ActorHasTag("Wall")))

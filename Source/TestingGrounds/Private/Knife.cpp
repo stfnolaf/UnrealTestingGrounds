@@ -3,6 +3,7 @@
 
 #include "Knife.h"
 #include "Corvo.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 AKnife::AKnife()
@@ -29,6 +30,9 @@ void AKnife::BeginPlay()
 	FOnTimelineFloat onKnifeThrowTraceTimelineCallback;
 	FOnTimelineEventStatic onKnifeThrowTraceTimelineFinishedCallback;
 
+	FOnTimelineFloat onKnifeReturnTraceTimelineCallback;
+	FOnTimelineEventStatic onKnifeReturnTraceTimelineFinishedCallback;
+
 	Super::BeginPlay();
 	
 	if (KnifeRotCurve != nullptr) {
@@ -52,7 +56,7 @@ void AKnife::BeginPlay()
 	}
 
 	if (KnifeThrowTraceCurve != nullptr) {
-		KnifeThrowTraceTimeline = NewObject<UTimelineComponent>(this, FName("Knife ThrowTraceation Timeline"));
+		KnifeThrowTraceTimeline = NewObject<UTimelineComponent>(this, FName("Knife Throw Trace Timeline"));
 		KnifeThrowTraceTimeline->CreationMethod = EComponentCreationMethod::UserConstructionScript;
 		this->BlueprintCreatedComponents.Add(KnifeThrowTraceTimeline);
 		KnifeThrowTraceTimeline->SetNetAddressable();
@@ -69,6 +73,26 @@ void AKnife::BeginPlay()
 		KnifeThrowTraceTimeline->SetTimelineFinishedFunc(onKnifeThrowTraceTimelineFinishedCallback);
 
 		KnifeThrowTraceTimeline->RegisterComponent();
+	}
+
+	if (KnifeReturnTraceCurve != nullptr) {
+		KnifeReturnTraceTimeline = NewObject<UTimelineComponent>(this, FName("Knife Return Trace Timeline"));
+		KnifeReturnTraceTimeline->CreationMethod = EComponentCreationMethod::UserConstructionScript;
+		this->BlueprintCreatedComponents.Add(KnifeReturnTraceTimeline);
+		KnifeReturnTraceTimeline->SetNetAddressable();
+
+		KnifeReturnTraceTimeline->SetLooping(true);
+		KnifeReturnTraceTimeline->SetTimelineLength(1.2f);
+		KnifeReturnTraceTimeline->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+		KnifeReturnTraceTimeline->SetPlaybackPosition(0.0f, false);
+
+		onKnifeReturnTraceTimelineCallback.BindUFunction(this, { FName("KnifeReturnTraceTimelineCallback") });
+		onKnifeReturnTraceTimelineFinishedCallback.BindUFunction(this, { FName("KnifeReturnTraceTimelineFinishedCallback") });
+		KnifeReturnTraceTimeline->AddInterpFloat(KnifeReturnTraceCurve, onKnifeReturnTraceTimelineCallback);
+		KnifeReturnTraceTimeline->SetTimelineFinishedFunc(onKnifeReturnTraceTimelineFinishedCallback);
+
+		KnifeReturnTraceTimeline->RegisterComponent();
 	}
 
 	//UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.25f);
@@ -203,9 +227,9 @@ void AKnife::Recall() {
 			FRotator rotator = FRotator::ZeroRotator;
 			FVector spawnLocation = FVector::ZeroVector;
 			ReturnPath = world->SpawnActor<AWeaponReturnPath>(ReturnPathClass, spawnLocation, rotator, spawnParams);
-			ReturnPath->SetTarget(Owner);
-			ReturnPath->SetKnifeOwner(this);
+			ReturnPath->SetKnifeOwnerAndTarget(this, Owner);
 			ReturnPath->UpdatePath();
+			KnifeReturnTraceTimeline->PlayFromStart();
 		}
 	}
 	/*KnifeThrowTraceTimeline->Stop();
@@ -226,4 +250,18 @@ float AKnife::GetClampedKnifeDistanceFromCharacter(float maxDist) {
 
 void AKnife::AdjustKnifeReturnLocation() {
 	SetActorLocation(GetActorLocation() + FVector(0.0f, 0.0f, (((ZAdjustment / 10.0f) - 1.0f) * 30.0f) + 20.0f));
+}
+
+void AKnife::KnifeReturnTraceTimelineCallback(float val) {
+	//TODO: Knife is returning to hand
+	FRotator rot = Owner->GetMyMesh()->GetSocketRotation(FName("knife_socket"));
+	//DRAWS LINE EXTENDING FROM CENTER OF PALM
+	/*DrawDebugLine(GetWorld(), Owner->GetMyMesh()->GetSocketLocation(FName("knife_socket")),
+		Owner->GetMyMesh()->GetSocketLocation(FName("knife_socket")) + (rot + FRotator(0.0f, 0.0f, 90.0f)).RotateVector(FVector::DownVector * 1000.0f),
+		FColor::Red, false, 5.0f, (uint8)'\000', 2.0f);*/
+	ReturnPath->UpdatePath();
+}
+
+void AKnife::KnifeReturnTraceTimelineFinishedCallback() {
+	//TODO: Knife returns to hand
 }
