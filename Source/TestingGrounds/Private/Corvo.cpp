@@ -107,12 +107,17 @@ void ACorvo::ThrowKnife() {
 }
 
 void ACorvo::RecallKnife() {
-	knife->Recall();
-	animInst->Waiting = true;
+	if (knife->Recall())
+		animInst->Waiting = true;
+	//knife->AttachToComponent(ArmsMesh, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("knife_socket"));
 }
 
 void ACorvo::EndWaitForKnife() {
 	animInst->Waiting = false;
+	animInst->Throwing = false;
+	animInst->Aiming = false;
+	knifeThrown = false;
+	knife->AttachToComponent(ArmsMesh, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("knife_socket"));
 }
 
 void ACorvo::OnReleaseAttack() {

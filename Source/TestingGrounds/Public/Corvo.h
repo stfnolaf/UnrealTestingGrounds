@@ -80,9 +80,6 @@ protected:
 
 	FTimerHandle knifeWaitHandle;
 
-	UFUNCTION()
-		void EndWaitForKnife();
-
 	UFUNCTION(BlueprintCallable, Category = KnifeThrowing)
 	void ThrowKnife();
 
@@ -118,4 +115,7 @@ public:
 	void SetRailDir(FVector vect);
 
 	bool IsOnGround();
+
+	UFUNCTION()
+	void EndWaitForKnife();
 };

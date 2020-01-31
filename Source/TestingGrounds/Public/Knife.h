@@ -42,7 +42,7 @@ protected:
 
 	FVector CameraLocationAtThrow = FVector::ZeroVector;
 
-	float KnifeThrowSpeed = 2500.0f;
+	float KnifeThrowSpeed = 3500.0f;
 
 	float KnifeSpinAxisOffset = 0.0f;
 
@@ -50,7 +50,7 @@ protected:
 
 	float KnifeThrowTraceDistance = 9.0f;
 
-	float MaxCalculationDistance = 3000.0f;
+	float MaxCalculationDistance = 3500.0f;
 
 	float DistanceFromCharacter = 0.0f;
 
@@ -59,6 +59,8 @@ protected:
 	FVector ImpactNormal = FVector::ZeroVector;
 
 	FVector InitialLocation = FVector::ZeroVector;
+
+	FVector LodgePointOffset = FVector(1.345885f, 0.0f, 0.0f);
 
 	FRotator InitialRotation = FRotator::ZeroRotator;
 
@@ -69,6 +71,12 @@ protected:
 	EKnifeState KnifeState = EKnifeState::VE_Idle;
 
 	float ZAdjustment = 0.0f;
+
+	float TimeSinceRecall = 0.0f;
+
+	float ReturnSpeed = 1000.0f;
+
+	float DeltaTime = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Pivots)
 	USceneComponent* PivotPoint;
@@ -163,6 +171,8 @@ protected:
 
 	void AdjustKnifeReturnLocation();
 
+	void HandleKnifeReturn();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -171,6 +181,6 @@ public:
 
 	void Throw(FRotator CameraRotation, FVector ThrowDirectionVector, FVector CameraLocation, float ThrowSpeed);
 
-	void Recall();
+	bool Recall();
 
 };

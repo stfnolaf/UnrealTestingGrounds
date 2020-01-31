@@ -3,7 +3,6 @@
 
 #include "Knife.h"
 #include "Corvo.h"
-#include "DrawDebugHelpers.h"
 
 // Sets default values
 AKnife::AKnife()
@@ -102,6 +101,8 @@ void AKnife::BeginPlay()
 void AKnife::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	this->DeltaTime = DeltaTime;
 
 	if (KnifeRotTimeline != nullptr) {
 		KnifeRotTimeline->TickComponent(DeltaTime, ELevelTick::LEVELTICK_TimeOnly, NULL);
@@ -216,8 +217,8 @@ void AKnife::KnifeThrowTraceTimelineFinishedCallback() {
 	// TODO: IMPLEMENT KNIFE STOP
 }
 
-void AKnife::Recall() {
-	if (ReturnPathClass && KnifeState != EKnifeState::VE_Returning) {
+bool AKnife::Recall() {
+	if (ReturnPathClass && KnifeState == EKnifeState::VE_LodgedInSomething) {
 		UWorld* world = GetWorld();
 		if (world) {
 			KnifeState = EKnifeState::VE_Returning;
@@ -226,21 +227,19 @@ void AKnife::Recall() {
 			//spawnParams.Owner = this;
 			FRotator rotator = FRotator::ZeroRotator;
 			FVector spawnLocation = FVector::ZeroVector;
-			ReturnPath = world->SpawnActor<AWeaponReturnPath>(ReturnPathClass, spawnLocation, rotator, spawnParams);
+			if (ReturnPath == nullptr) {
+				ReturnPath = world->SpawnActor<AWeaponReturnPath>(ReturnPathClass, spawnLocation, rotator, spawnParams);
+			}
 			ReturnPath->SetKnifeOwnerAndTarget(this, Owner);
 			ReturnPath->UpdatePath();
+			TimeSinceRecall = 0.0f;
+			LodgePoint->SetRelativeRotation(FRotator::ZeroRotator);
 			KnifeReturnTraceTimeline->PlayFromStart();
+			return true;
 		}
+		return false;
 	}
-	/*KnifeThrowTraceTimeline->Stop();
-	KnifeMeshVar->SetVisibility(true, false);
-	ZAdjustment = 10.0f;
-	DistanceFromCharacter = GetClampedKnifeDistanceFromCharacter(MaxCalculationDistance);
-	AdjustKnifeReturnLocation();
-	InitialLocation = GetActorLocation();
-	InitialRotation = GetActorRotation();
-	CameraStartRotation = Owner->GetCamera()->GetComponentRotation();
-	LodgePoint->SetRelativeLocation(FVector::ZeroVector);*/
+	return false;
 }
 
 float AKnife::GetClampedKnifeDistanceFromCharacter(float maxDist) {
@@ -254,14 +253,23 @@ void AKnife::AdjustKnifeReturnLocation() {
 
 void AKnife::KnifeReturnTraceTimelineCallback(float val) {
 	//TODO: Knife is returning to hand
-	FRotator rot = Owner->GetMyMesh()->GetSocketRotation(FName("knife_socket"));
-	//DRAWS LINE EXTENDING FROM CENTER OF PALM
-	/*DrawDebugLine(GetWorld(), Owner->GetMyMesh()->GetSocketLocation(FName("knife_socket")),
-		Owner->GetMyMesh()->GetSocketLocation(FName("knife_socket")) + (rot + FRotator(0.0f, 0.0f, 90.0f)).RotateVector(FVector::DownVector * 1000.0f),
-		FColor::Red, false, 5.0f, (uint8)'\000', 2.0f);*/
 	ReturnPath->UpdatePath();
+	TimeSinceRecall += DeltaTime;
+	SetActorLocation(ReturnPath->GetSpline()->GetLocationAtDistanceAlongSpline(TimeSinceRecall * ReturnSpeed, ESplineCoordinateSpace::World), true, nullptr, ETeleportType::None);
+	if (FVector::Dist(Owner->GetMyMesh()->GetSocketLocation(FName("knife_socket")), GetActorLocation()) < 5.0f) {
+		HandleKnifeReturn();
+	}
 }
 
 void AKnife::KnifeReturnTraceTimelineFinishedCallback() {
 	//TODO: Knife returns to hand
+	UE_LOG(LogTemp, Warning, TEXT("knife return ended"))
+}
+
+void AKnife::HandleKnifeReturn() {
+	if (KnifeState == EKnifeState::VE_Returning) {
+		KnifeState = EKnifeState::VE_Idle;
+		KnifeReturnTraceTimeline->Stop();
+		Owner->EndWaitForKnife();
+	}
 }

@@ -5,7 +5,7 @@
 #include "Knife.h"
 #include "Corvo.h"
 #include "Components/SplineComponent.h"
-#include "Kismet/KismetMathLibrary.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 AWeaponReturnPath::AWeaponReturnPath()
@@ -21,6 +21,8 @@ AWeaponReturnPath::AWeaponReturnPath()
 void AWeaponReturnPath::BeginPlay()
 {
 	Super::BeginPlay();
+	Spline->SetDefaultUpVector(FVector::UpVector, ESplineCoordinateSpace::World);
+	Spline->SetSplinePointType(1, ESplinePointType::CurveCustomTangent, true);
 	
 }
 
@@ -38,14 +40,18 @@ USplineComponent* AWeaponReturnPath::GetSpline() {
 void AWeaponReturnPath::SetKnifeOwnerAndTarget(AKnife* weapon, ACorvo* owner) {
 	Weapon = weapon;
 	Target = owner;
-	InitialDistToTarget = UKismetMathLibrary::Abs((Weapon->GetActorLocation() - Target->GetActorLocation()).Size());
+	InitialDistToTarget = FVector::Dist(Target->GetMyMesh()->GetSocketLocation(FName("knife_socket")), Weapon->GetActorLocation());
+	Spline->SetWorldLocationAtSplinePoint(0, Weapon->GetActorLocation());
 }
 
 void AWeaponReturnPath::UpdatePath() {
 	if (Weapon != nullptr && Target != nullptr) {
 		FRotator rot = Target->GetMyMesh()->GetSocketRotation(FName("knife_socket"));
-		Spline->SetWorldLocationAtSplinePoint(0, Weapon->GetActorLocation());
 		Spline->SetWorldLocationAtSplinePoint(1, Target->GetMyMesh()->GetSocketLocation(FName("knife_socket")));
-		Spline->SetTangentAtSplinePoint(1, Target->GetMyMesh()->GetSocketLocation(FName("knife_socket")) + (rot + FRotator(0.0f, 0.0f, 90.0f)).Quaternion() * FVector::DownVector * InitialDistToTarget * -0.5f, ESplineCoordinateSpace::World, true);
+		Spline->SetTangentAtSplinePoint(1, (rot + FRotator(0.0f, 0.0f, 90.0f)).RotateVector(FVector::DownVector * InitialDistToTarget * -0.5f), ESplineCoordinateSpace::World, true);
+		//DRAWS LINE EXTENDING FROM CENTER OF PALM
+		/*DrawDebugLine(GetWorld(), Target->GetMyMesh()->GetSocketLocation(FName("knife_socket")),
+			Target->GetMyMesh()->GetSocketLocation(FName("knife_socket")) + (rot + FRotator(0.0f, 0.0f, 90.0f)).RotateVector(FVector::DownVector * InitialDistToTarget * 0.5f),
+			FColor::Red, false, 10.0f, (uint8)'\000', 2.0f);*/
 	}
 }
