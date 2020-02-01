@@ -73,6 +73,9 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AKnife> knifeClass;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UCameraShake> CatchCameraShake;
+
 	AKnife* knife;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
@@ -115,6 +118,8 @@ public:
 	void SetRailDir(FVector vect);
 
 	bool IsOnGround();
+
+	void UpdateDeltaYawBetweenPlayerAndKnife();
 
 	UFUNCTION()
 	void EndWaitForKnife();

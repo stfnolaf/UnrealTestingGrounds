@@ -74,7 +74,7 @@ protected:
 
 	float TimeSinceRecall = 0.0f;
 
-	float ReturnSpeed = 1000.0f;
+	float ReturnSpeed = 0.0f;
 
 	float DeltaTime = 0.0f;
 
@@ -148,6 +148,10 @@ protected:
 public:	
 	// Sets default values for this actor's properties
 	AKnife();
+
+	float MinReturnSpeed = 500.0f;
+	
+	float MaxReturnSpeed = 1000.0f;
 
 protected:
 	// Called when the game starts or when spawned

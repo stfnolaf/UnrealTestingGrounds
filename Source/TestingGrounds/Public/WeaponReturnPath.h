@@ -28,6 +28,8 @@ protected:
 
 	class ACorvo* Target = nullptr;
 
+	float EaseIn(float alpha);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -37,5 +39,7 @@ public:
 	void SetKnifeOwnerAndTarget(AKnife* weapons, ACorvo* owner);
 
 	void UpdatePath();
+
+	float UpdateReturnSpeed(float distance);
 
 };

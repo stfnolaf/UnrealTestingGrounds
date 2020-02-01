@@ -25,7 +25,13 @@ public:
 		bool Waiting = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
-		FVector ElbowPosition = FVector(-27.107f, 31.697f, 127.855f);
+		float DeltaYawBetweenPlayerDirectionAndKnife = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
+		bool KnifeCatchKnockback = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
+		float KnifeCatchKnockbackAlpha = 0.0f;
 
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
 		bool Knockback = false;

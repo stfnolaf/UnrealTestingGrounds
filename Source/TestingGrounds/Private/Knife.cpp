@@ -224,7 +224,6 @@ bool AKnife::Recall() {
 			KnifeState = EKnifeState::VE_Returning;
 			FActorSpawnParameters spawnParams;
 			spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-			//spawnParams.Owner = this;
 			FRotator rotator = FRotator::ZeroRotator;
 			FVector spawnLocation = FVector::ZeroVector;
 			if (ReturnPath == nullptr) {
@@ -233,6 +232,7 @@ bool AKnife::Recall() {
 			ReturnPath->SetKnifeOwnerAndTarget(this, Owner);
 			ReturnPath->UpdatePath();
 			TimeSinceRecall = 0.0f;
+			ReturnSpeed = 500.0f;
 			LodgePoint->SetRelativeRotation(FRotator::ZeroRotator);
 			KnifeReturnTraceTimeline->PlayFromStart();
 			return true;
@@ -252,10 +252,11 @@ void AKnife::AdjustKnifeReturnLocation() {
 }
 
 void AKnife::KnifeReturnTraceTimelineCallback(float val) {
-	//TODO: Knife is returning to hand
+	Owner->UpdateDeltaYawBetweenPlayerAndKnife();
 	ReturnPath->UpdatePath();
 	TimeSinceRecall += DeltaTime;
 	SetActorLocation(ReturnPath->GetSpline()->GetLocationAtDistanceAlongSpline(TimeSinceRecall * ReturnSpeed, ESplineCoordinateSpace::World), true, nullptr, ETeleportType::None);
+	ReturnSpeed = ReturnPath->UpdateReturnSpeed(TimeSinceRecall * ReturnSpeed);
 	if (FVector::Dist(Owner->GetMyMesh()->GetSocketLocation(FName("knife_socket")), GetActorLocation()) < 5.0f) {
 		HandleKnifeReturn();
 	}

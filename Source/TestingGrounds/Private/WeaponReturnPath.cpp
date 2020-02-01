@@ -44,14 +44,22 @@ void AWeaponReturnPath::SetKnifeOwnerAndTarget(AKnife* weapon, ACorvo* owner) {
 	Spline->SetWorldLocationAtSplinePoint(0, Weapon->GetActorLocation());
 }
 
+float AWeaponReturnPath::UpdateReturnSpeed(float distance) {
+	return ((distance / Spline->GetSplineLength()) * (Weapon->MaxReturnSpeed - Weapon->MinReturnSpeed)) + Weapon->MinReturnSpeed;
+}
+
+float AWeaponReturnPath::EaseIn(float alpha) {
+	return 1.0f - FMath::Sqrt(1.0f - FMath::Pow(FMath::Clamp(alpha, 0.0f, 1.0f), 2.0f));
+}
+
 void AWeaponReturnPath::UpdatePath() {
 	if (Weapon != nullptr && Target != nullptr) {
 		FRotator rot = Target->GetMyMesh()->GetSocketRotation(FName("knife_socket"));
 		Spline->SetWorldLocationAtSplinePoint(1, Target->GetMyMesh()->GetSocketLocation(FName("knife_socket")));
-		Spline->SetTangentAtSplinePoint(1, (rot + FRotator(0.0f, 0.0f, 90.0f)).RotateVector(FVector::DownVector * InitialDistToTarget * -0.5f), ESplineCoordinateSpace::World, true);
+		Spline->SetTangentAtSplinePoint(1, (rot + FRotator(0.0f, 0.0f, 45.0f)).RotateVector(FVector::DownVector * InitialDistToTarget * -0.5f), ESplineCoordinateSpace::World, true);
 		//DRAWS LINE EXTENDING FROM CENTER OF PALM
 		/*DrawDebugLine(GetWorld(), Target->GetMyMesh()->GetSocketLocation(FName("knife_socket")),
-			Target->GetMyMesh()->GetSocketLocation(FName("knife_socket")) + (rot + FRotator(0.0f, 0.0f, 90.0f)).RotateVector(FVector::DownVector * InitialDistToTarget * 0.5f),
+			Target->GetMyMesh()->GetSocketLocation(FName("knife_socket")) + (rot + FRotator(0.0f, 0.0f, 55.0f)).RotateVector(FVector::DownVector * InitialDistToTarget * 0.5f),
 			FColor::Red, false, 10.0f, (uint8)'\000', 2.0f);*/
 	}
 }

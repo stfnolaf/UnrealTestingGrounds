@@ -118,6 +118,11 @@ void ACorvo::EndWaitForKnife() {
 	animInst->Aiming = false;
 	knifeThrown = false;
 	knife->AttachToComponent(ArmsMesh, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("knife_socket"));
+	UGameplayStatics::PlayWorldCameraShake(GetWorld(), CatchCameraShake, GetActorLocation(), 0.0f, 500.0f);
+}
+
+void ACorvo::UpdateDeltaYawBetweenPlayerAndKnife() {
+	animInst->DeltaYawBetweenPlayerDirectionAndKnife = FMath::FindDeltaAngleDegrees(PlayerCamera->GetForwardVector().Rotation().Yaw, (knife->GetActorLocation() - GetActorLocation()).Rotation().Yaw);
 }
 
 void ACorvo::OnReleaseAttack() {
