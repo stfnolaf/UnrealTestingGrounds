@@ -110,7 +110,7 @@ void ACorvo::ThrowKnife() {
 }
 
 void ACorvo::RecallKnife() {
-	if (knife->GetKnifeState() == EKnifeState::VE_LodgedInSomething) {
+	if (knife->GetKnifeState() == EKnifeState::VE_LodgedInSomething || knife->GetKnifeState() == EKnifeState::VE_Launched) {
 		if (knife->Recall())
 			animInst->Waiting = true;
 	}
@@ -201,10 +201,21 @@ void ACorvo::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("LeftClick", IE_Pressed, this, &ACorvo::OnInitiateAttack);
 	PlayerInputComponent->BindAction("LeftClick", IE_Released, this, &ACorvo::OnReleaseAttack);
 
+	PlayerInputComponent->BindAction("Slow", IE_Pressed, this, &ACorvo::SlowTime);
+	PlayerInputComponent->BindAction("Slow", IE_Released, this, &ACorvo::NormalTime);
+
 	PlayerInputComponent->BindAction("Quit", IE_Pressed, this, &ACorvo::OnQuit);
 
 	this->PlayerInputComponent = PlayerInputComponent;
 
+}
+
+void ACorvo::SlowTime() {
+	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.25f);
+}
+
+void ACorvo::NormalTime() {
+	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
 }
 
 float ACorvo::GetForwardMovement() {

@@ -96,6 +96,10 @@ protected:
 
 	void GrappleToLocation(FVector loc);
 
+	void SlowTime();
+
+	void NormalTime();
+
 
 public:	
 	// Called every frame

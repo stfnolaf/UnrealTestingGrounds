@@ -38,7 +38,7 @@ public:
 
 	void SetKnifeOwnerAndTarget(AKnife* weapons, ACorvo* owner);
 
-	void UpdatePath();
+	void UpdatePath(FRotator TargetRotation);
 
 	float UpdateReturnSpeed(float distance);
 

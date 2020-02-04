@@ -190,7 +190,7 @@ void AKnife::KnifeThrowTraceTimelineCallback(float val) {
 	UKismetMathLibrary::Vector_Normalize(vel, 0.0001f);
 	if (UKismetSystemLibrary::LineTraceSingle(GetWorld(), GetActorLocation(), GetActorLocation() + (vel * KnifeThrowTraceDistance), ETraceTypeQuery::TraceTypeQuery1, false, Actors, EDrawDebugTrace::None, knifeHit, true, FLinearColor::Red, FLinearColor::Green, 0.0f)) {
 		if (knifeHit.bBlockingHit) {
-			DrawDebugLine(GetWorld(), Owner->GetActorLocation(), Owner->GetActorLocation() + (vel * KnifeThrowTraceDistance), FColor::Red, true, 100.0f, (uint8)'\000', 1.0f);
+			//DrawDebugLine(GetWorld(), Owner->GetActorLocation(), Owner->GetActorLocation() + (vel * KnifeThrowTraceDistance), FColor::Red, true, 100.0f, (uint8)'\000', 1.0f);
 			ImpactLocation = knifeHit.ImpactPoint;
 			ImpactNormal = knifeHit.ImpactNormal;
 			HitBoneName = knifeHit.BoneName;
@@ -227,7 +227,7 @@ bool AKnife::Recall() {
 				ReturnPath = world->SpawnActor<AWeaponReturnPath>(ReturnPathClass, spawnLocation, rotator, spawnParams);
 			}
 			ReturnPath->SetKnifeOwnerAndTarget(this, Owner);
-			ReturnPath->UpdatePath();
+			ReturnPath->UpdatePath(Owner->GetMyMesh()->GetSocketRotation(FName("knife_socket")));
 			TimeSinceRecall = 0.0f;
 			ReturnSpeed = 500.0f;
 			LodgePoint->SetRelativeRotation(FRotator::ZeroRotator);
@@ -254,9 +254,22 @@ void AKnife::AdjustKnifeReturnLocation() {
 
 void AKnife::KnifeReturnTraceTimelineCallback(float val) {
 	Owner->UpdateDeltaYawBetweenPlayerAndKnife();
-	ReturnPath->UpdatePath();
+	FRotator SocketRotation = Owner->GetMyMesh()->GetSocketRotation(FName("knife_socket"));
+	ReturnPath->UpdatePath(SocketRotation);
 	TimeSinceRecall += DeltaTime;
 	SetActorLocation(ReturnPath->GetSpline()->GetLocationAtDistanceAlongSpline(TimeSinceRecall * ReturnSpeed, ESplineCoordinateSpace::World), true, nullptr, ETeleportType::None);
+	float tValue = FMath::Clamp((TimeSinceRecall * ReturnSpeed) / ReturnPath->GetSpline()->GetSplineLength(), 0.0f, 1.0f);
+	float TimeUntilCatch = (TimeSinceRecall / tValue) - TimeSinceRecall;
+	if (tValue < 0.75f) {
+		PivotPoint->SetRelativeRotation(FRotator(TimeSinceRecall * 360.0f, 0.0f, 0.0f));
+	}
+	else {
+		float CurrRot = FMath::Fmod(PivotPoint->GetRelativeRotation().Pitch, 360.0f);
+		float RemainingRotation = 360.0f - CurrRot;
+		PivotPoint->SetRelativeRotation(FMath::RInterpTo(PivotPoint->GetRelativeRotation(), FRotator::ZeroRotator, DeltaTime, (RemainingRotation / TimeUntilCatch)));
+	}
+	float AngleDifference = FMath::Acos(FVector::DotProduct(GetActorRotation().Vector(), SocketRotation.Vector()));
+	SetActorRotation(FMath::RInterpTo(GetActorRotation(), SocketRotation, DeltaTime, (AngleDifference / TimeUntilCatch)));
 	ReturnSpeed = ReturnPath->UpdateReturnSpeed(TimeSinceRecall * ReturnSpeed);
 	if (FVector::Dist(Owner->GetMyMesh()->GetSocketLocation(FName("knife_socket")), GetActorLocation()) < 5.0f) {
 		HandleKnifeReturn();
