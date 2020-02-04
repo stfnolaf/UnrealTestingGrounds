@@ -266,7 +266,8 @@ void AKnife::KnifeReturnTraceTimelineCallback(float val) {
 	else {
 		float CurrRot = FMath::Fmod(PivotPoint->GetRelativeRotation().Pitch, 360.0f);
 		float RemainingRotation = 360.0f - CurrRot;
-		PivotPoint->SetRelativeRotation(FMath::RInterpTo(PivotPoint->GetRelativeRotation(), FRotator::ZeroRotator, DeltaTime, (RemainingRotation / TimeUntilCatch)));
+		float PitchValue = FMath::FInterpTo(CurrRot, 360.0f, DeltaTime, (RemainingRotation / TimeUntilCatch));
+		PivotPoint->SetRelativeRotation(FRotator(PitchValue, 0.0f, 0.0f));
 	}
 	float AngleDifference = FMath::Acos(FVector::DotProduct(GetActorRotation().Vector(), SocketRotation.Vector()));
 	SetActorRotation(FMath::RInterpTo(GetActorRotation(), SocketRotation, DeltaTime, (AngleDifference / TimeUntilCatch)));

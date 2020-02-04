@@ -49,7 +49,7 @@ protected:
 
 	float KnifeSpinRate = 2.5f;
 
-	float KnifeThrowTraceDistance = 30.0f;
+	float KnifeThrowTraceDistance = 40.0f;
 
 	float MaxCalculationDistance = 3500.0f;
 
