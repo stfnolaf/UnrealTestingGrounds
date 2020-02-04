@@ -36,6 +36,9 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 	USkeletalMeshComponent* ArmsMesh;
 
+	UPROPERTY(VisibleDefaultsOnly, Category = WallRunning)
+	class UWallRunning* WallRunningComponent;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -89,6 +92,10 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = KnifeThrowing)
 	void RecallKnife();
 
+	UInputComponent* PlayerInputComponent;
+
+	void GrappleToLocation(FVector loc);
+
 
 public:	
 	// Called every frame
@@ -123,4 +130,8 @@ public:
 
 	UFUNCTION()
 	void EndWaitForKnife();
+
+	float GetForwardMovement();
+
+	UWallRunning* GetWallRunningComponent();
 };

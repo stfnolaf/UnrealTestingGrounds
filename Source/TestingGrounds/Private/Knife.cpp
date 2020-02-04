@@ -3,6 +3,9 @@
 
 #include "Knife.h"
 #include "Corvo.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "WallRunning.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 AKnife::AKnife()
@@ -148,31 +151,25 @@ void AKnife::StartKnifeRotForward() {
 	}
 }
 
-void AKnife::LodgeKnife() {
+void AKnife::LodgeKnife(bool permalodge) {
 	StopKnifeMoving();
 	PivotPoint->SetRelativeRotation(FRotator::ZeroRotator);
-	SetActorRotation(CameraStartRotation);
-	LodgePoint->SetRelativeRotation(FRotator(AdjustKnifeImpactPitch(UKismetMathLibrary::RandomFloatInRange(-30.0f, -55.0f), UKismetMathLibrary::RandomFloatInRange(-5.0f, -25.0f)), 0.0f, UKismetMathLibrary::RandomFloatInRange(-3.0f, -8.0f)));
+	SetActorRotation(CameraStartRotation.Add(0.0f, 0.0f, -75.0f));
+	//LodgePoint->SetRelativeRotation(FRotator(AdjustKnifeImpactPitch(UKismetMathLibrary::RandomFloatInRange(-30.0f, -55.0f), UKismetMathLibrary::RandomFloatInRange(-5.0f, -25.0f)), 0.0f, UKismetMathLibrary::RandomFloatInRange(-3.0f, -8.0f)));
 	SetActorLocation(AdjustKnifeImpactLocation());
-	KnifeState = EKnifeState::VE_LodgedInSomething;
+	if (!permalodge)
+		KnifeState = EKnifeState::VE_LodgedInSomething;
+	else
+		KnifeState = EKnifeState::VE_PermaLodged;
 }
 
 FVector AKnife::AdjustKnifeImpactLocation() {
-	float pitch = UKismetMathLibrary::MakeRotationFromAxes(ImpactNormal, FVector::ZeroVector, FVector::ZeroVector).Pitch;
-	ZAdjustment = (pitch > 0.0f ? pitch : 0.0f) - 90.0f;
-	ZAdjustment /= 90.0f;
-	ZAdjustment *= 10.0f;
-	return ImpactLocation /*+ FVector(0.0f, 0.0f, ZAdjustment)*/ + (GetActorLocation() - LodgePoint->GetComponentLocation());
-}
-
-float AKnife::AdjustKnifeImpactPitch(float InclinedSurfaceRange, float RegularSurfaceRange) {
-	float pitch = UKismetMathLibrary::MakeRotationFromAxes(ImpactNormal, FVector::ZeroVector, FVector::ZeroVector).Pitch;
-	return (pitch > 0.0f ? RegularSurfaceRange : InclinedSurfaceRange) - pitch;
+	return ImpactLocation + (GetRootComponent()->GetComponentLocation() - LodgePoint->GetComponentLocation());
 }
 
 void AKnife::StopKnifeMoving() {
+	KnifeThrowTraceTimeline->Stop();
 	ProjectileMovementVar->Deactivate();
-	check(KnifeRotTimeline);
 	KnifeRotTimeline->Stop();
 }
 
@@ -193,6 +190,7 @@ void AKnife::KnifeThrowTraceTimelineCallback(float val) {
 	UKismetMathLibrary::Vector_Normalize(vel, 0.0001f);
 	if (UKismetSystemLibrary::LineTraceSingle(GetWorld(), GetActorLocation(), GetActorLocation() + (vel * KnifeThrowTraceDistance), ETraceTypeQuery::TraceTypeQuery1, false, Actors, EDrawDebugTrace::None, knifeHit, true, FLinearColor::Red, FLinearColor::Green, 0.0f)) {
 		if (knifeHit.bBlockingHit) {
+			DrawDebugLine(GetWorld(), Owner->GetActorLocation(), Owner->GetActorLocation() + (vel * KnifeThrowTraceDistance), FColor::Red, true, 100.0f, (uint8)'\000', 1.0f);
 			ImpactLocation = knifeHit.ImpactPoint;
 			ImpactNormal = knifeHit.ImpactNormal;
 			HitBoneName = knifeHit.BoneName;
@@ -201,12 +199,9 @@ void AKnife::KnifeThrowTraceTimelineCallback(float val) {
 				SurfaceType = temp->SurfaceType;
 				// if hit actor can be cast to a destructible, handle destruction
 				// else
-				check(KnifeThrowTraceTimeline);
-				KnifeThrowTraceTimeline->Stop();
-				ProjectileMovementVar->Deactivate();
 				// if hit actor can be cast to an AI, handle hit
 				// else
-				LodgeKnife();
+				LodgeKnife(false);
 			}
 
 		}
@@ -218,9 +213,11 @@ void AKnife::KnifeThrowTraceTimelineFinishedCallback() {
 }
 
 bool AKnife::Recall() {
-	if (ReturnPathClass && KnifeState == EKnifeState::VE_LodgedInSomething) {
+	if (ReturnPathClass && KnifeState != EKnifeState::VE_Idle && KnifeState != EKnifeState::VE_Returning) {
 		UWorld* world = GetWorld();
 		if (world) {
+			if (KnifeState == EKnifeState::VE_Launched)
+				StopKnifeMoving();
 			KnifeState = EKnifeState::VE_Returning;
 			FActorSpawnParameters spawnParams;
 			spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -240,6 +237,10 @@ bool AKnife::Recall() {
 		return false;
 	}
 	return false;
+}
+
+EKnifeState AKnife::GetKnifeState() {
+	return KnifeState;
 }
 
 float AKnife::GetClampedKnifeDistanceFromCharacter(float maxDist) {

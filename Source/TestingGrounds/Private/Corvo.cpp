@@ -7,6 +7,7 @@
 #include "Runtime/Engine/Public/TimerManager.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 #include "Runtime/Engine/Classes/GameFramework/SpringArmComponent.h"
+#include "WallRunning.h"
 
 // Sets default values
 ACorvo::ACorvo()
@@ -33,6 +34,8 @@ ACorvo::ACorvo()
 	ArmsMesh->SetupAttachment(ArmController);
 	ArmsMesh->SetRelativeLocation(FVector(-18.0f, 0.0f, -112.0f));
 	ArmsMesh->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
+
+	WallRunningComponent = CreateDefaultSubobject<UWallRunning>(TEXT("Wall Running"));
 } // end of constructor
 
 // Called when the game starts or when spawned
@@ -99,7 +102,7 @@ void ACorvo::OnInitiateAttack() {
 void ACorvo::ThrowKnife() {
 	if (!knifeThrown) {
 		knife->DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld, false));
-		knife->Throw(PlayerCamera->GetComponentRotation(), PlayerCamera->GetForwardVector(), PlayerCamera->GetComponentLocation(), 2500.0f);
+		knife->Throw(PlayerCamera->GetComponentRotation(), PlayerCamera->GetForwardVector(), PlayerCamera->GetComponentLocation(), 3500.0f);
 		knifeThrown = true;
 		animInst->Throwing = false;
 		animInst->Aiming = false;
@@ -107,9 +110,18 @@ void ACorvo::ThrowKnife() {
 }
 
 void ACorvo::RecallKnife() {
-	if (knife->Recall())
-		animInst->Waiting = true;
+	if (knife->GetKnifeState() == EKnifeState::VE_LodgedInSomething) {
+		if (knife->Recall())
+			animInst->Waiting = true;
+	}
+	else if (knife->GetKnifeState() == EKnifeState::VE_PermaLodged) {
+		GrappleToLocation(knife->GetActorLocation());
+	}
 	//knife->AttachToComponent(ArmsMesh, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("knife_socket"));
+}
+
+void ACorvo::GrappleToLocation(FVector TargetLocation) {
+	LaunchCharacter((TargetLocation - GetActorLocation()) * 1.5f, false, false);
 }
 
 void ACorvo::EndWaitForKnife() {
@@ -191,6 +203,12 @@ void ACorvo::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	PlayerInputComponent->BindAction("Quit", IE_Pressed, this, &ACorvo::OnQuit);
 
+	this->PlayerInputComponent = PlayerInputComponent;
+
+}
+
+float ACorvo::GetForwardMovement() {
+	return PlayerInputComponent->GetAxisValue(FName("MoveForward"));
 }
 
 USkeletalMeshComponent* ACorvo::GetMyMesh() {
@@ -199,6 +217,10 @@ USkeletalMeshComponent* ACorvo::GetMyMesh() {
 
 UCameraComponent* ACorvo::GetCamera() {
 	return PlayerCamera;
+}
+
+UWallRunning* ACorvo::GetWallRunningComponent() {
+	return WallRunningComponent;
 }
 
 void ACorvo::MyJump() {

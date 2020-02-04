@@ -44,7 +44,7 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (!player->GetMovementComponent()->IsFalling() && player->IsOnGround()) {
+	if (!player->GetMovementComponent()->IsFalling() && player->IsOnGround() && lastWall != nullptr) {
 		lastWall = nullptr;
 	}
 
@@ -66,10 +66,10 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		lineTraceDist = 114.4f;
 	
 	contactLeft = GetWorld()->LineTraceSingleByChannel(leftHit, startLoc, startLoc - lineTraceDist * rightVect, ECollisionChannel::ECC_Visibility);
-	if(!contactLeft && directionLocked || (contactLeft && leftHit.Actor.IsValid() && !leftHit.Actor.Get()->ActorHasTag("Wall")))
+	if (!contactLeft && directionLocked || (contactLeft && leftHit.Actor.IsValid() && !leftHit.Actor.Get()->ActorHasTag("Wall")))
 		contactLeft = GetWorld()->LineTraceSingleByChannel(leftHit, startLoc, startLoc + lineTraceDist * diagonalLeftVect, ECollisionChannel::ECC_Visibility);
 	contactRight = GetWorld()->LineTraceSingleByChannel(rightHit, startLoc, startLoc + lineTraceDist * rightVect, ECollisionChannel::ECC_Visibility);
-	if(!contactRight && directionLocked || (contactRight && rightHit.Actor.IsValid() && !rightHit.Actor.Get()->ActorHasTag("Wall")))
+	if (!contactRight && directionLocked || (contactRight && rightHit.Actor.IsValid() && !rightHit.Actor.Get()->ActorHasTag("Wall")))
 		contactRight = GetWorld()->LineTraceSingleByChannel(rightHit, startLoc, startLoc + lineTraceDist * diagonalRightVect, ECollisionChannel::ECC_Visibility);
 
 	// If actor is tagged as a wall and the impact normal's z coordinate is less than 0.1f
@@ -193,7 +193,7 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 			player->MyJump();
 		}
 
-		if (UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(EKeys::W) == 0.0f
+		if (player->GetForwardMovement() == 0.0f
 			|| (finalHitIsLeft && FMath::FindDeltaAngleDegrees(playerDir.Rotation().Yaw, myPC->GetControlRotation().Yaw) > 30.0f)
 			|| (!finalHitIsLeft && FMath::FindDeltaAngleDegrees(playerDir.Rotation().Yaw, myPC->GetControlRotation().Yaw) < -30.0f)
 			|| (finalHitIsLeft && FMath::FindDeltaAngleDegrees(playerDir.Rotation().Yaw, myPC->GetControlRotation().Yaw) < -30.0f && directionLocked)

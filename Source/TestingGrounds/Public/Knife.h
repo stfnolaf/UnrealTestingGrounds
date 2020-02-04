@@ -24,7 +24,8 @@ enum class EKnifeState : uint8
 	VE_Idle 	UMETA(DisplayName = "Idle"),
 	VE_Launched 	UMETA(DisplayName = "Launched"),
 	VE_LodgedInSomething	UMETA(DisplayName = "LodgedInSomething"),
-	VE_Returning	UMETA(DisplayName = "Returning")
+	VE_Returning	UMETA(DisplayName = "Returning"),
+	VE_PermaLodged	UMETA(DisplayName = "PermaLodged")
 };
 
 UCLASS()
@@ -42,13 +43,13 @@ protected:
 
 	FVector CameraLocationAtThrow = FVector::ZeroVector;
 
-	float KnifeThrowSpeed = 3500.0f;
+	float KnifeThrowSpeed = 10000.0f;
 
 	float KnifeSpinAxisOffset = 0.0f;
 
 	float KnifeSpinRate = 2.5f;
 
-	float KnifeThrowTraceDistance = 9.0f;
+	float KnifeThrowTraceDistance = 30.0f;
 
 	float MaxCalculationDistance = 3500.0f;
 
@@ -142,8 +143,6 @@ protected:
 
 	UPROPERTY()
 	TEnumAsByte<ETimelineDirection::Type> KnifeReturnTraceTimelineDirection;
-
-
 	
 public:	
 	// Sets default values for this actor's properties
@@ -163,11 +162,9 @@ protected:
 
 	void StartKnifeRotForward();
 
-	void LodgeKnife();
+	void LodgeKnife(bool permalodge);
 
 	void StopKnifeMoving();
-
-	float AdjustKnifeImpactPitch(float InclinedSurfaceRange, float RegularSurfaceRange);
 
 	FVector AdjustKnifeImpactLocation();
 
@@ -186,5 +183,7 @@ public:
 	void Throw(FRotator CameraRotation, FVector ThrowDirectionVector, FVector CameraLocation, float ThrowSpeed);
 
 	bool Recall();
+
+	EKnifeState GetKnifeState();
 
 };
