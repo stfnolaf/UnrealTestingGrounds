@@ -190,7 +190,7 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 				UE_LOG(LogTemp, Error, TEXT("LASTWALL COULD NOT BE SET - WALLRUNNING::TICKCOMPONENT()"));
 			}
 			player->ResetJumps();
-			player->MyJump();
+			player->SpacebarAction();
 		}
 
 		if (player->GetForwardMovement() == 0.0f

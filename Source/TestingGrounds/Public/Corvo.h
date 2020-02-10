@@ -39,6 +39,9 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, Category = WallRunning)
 	class UWallRunning* WallRunningComponent;
 
+	UPROPERTY(VisibleDefaultsOnly, Category = WallClimbing)
+	class USphereComponent* SphereTracer;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -66,6 +69,29 @@ protected:
 
 	bool onGround = true;
 
+	// LEDGE TRACER
+	bool CanTraceForLedges = false;
+
+	FVector WallTraceImpact = FVector::ZeroVector;
+
+	FVector WallNormal = FVector::ZeroVector;
+
+	FVector LedgeHeight = FVector::ZeroVector;
+
+	bool IsClimbingLedge = false;
+
+	bool CanGrabLedge = false;
+
+	bool JustLetGo = false;
+
+	FTimerHandle LedgeGrabDelayHandle;
+
+	UFUNCTION()
+	void OnLedgeTracerOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnLedgeTracerOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
 	FVector railDir = FVector();
 
 	UCorvoAnimInstance* animInst = nullptr;
@@ -81,7 +107,7 @@ protected:
 
 	AKnife* knife;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Corvo)
 	bool knifeThrown = true;
 
 	FTimerHandle knifeWaitHandle;
@@ -96,10 +122,9 @@ protected:
 
 	void GrappleToLocation(FVector loc);
 
-	void SlowTime();
+	void ToggleTime();
 
-	void NormalTime();
-
+	void CrouchAction();
 
 public:	
 	// Called every frame
@@ -116,7 +141,14 @@ public:
 
 	void ResetJumps();
 
-	void MyJump();
+	void SpacebarAction();
+
+	void LetGoOfLedge();
+
+	UFUNCTION()
+	void ResetJustLetGo();
+
+	void GrabLedge();
 
 	void DisableHorizontalMovement();
 
