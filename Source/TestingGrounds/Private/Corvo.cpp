@@ -11,6 +11,7 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Runtime/Engine/Public/TimerManager.h"
+#include "Climbing.h"
 
 // Sets default values
 ACorvo::ACorvo()
@@ -45,6 +46,8 @@ ACorvo::ACorvo()
 	SphereTracer->SetSphereRadius(100.0f);
 	SphereTracer->OnComponentBeginOverlap.AddDynamic(this, &ACorvo::OnLedgeTracerOverlapBegin);
 	SphereTracer->OnComponentEndOverlap.AddDynamic(this, &ACorvo::OnLedgeTracerOverlapEnd);
+
+	ClimbingComponent = CreateDefaultSubobject<UClimbing>(TEXT("Climbing"));
 } // end of constructor
 
 // Called when the game starts or when spawned
@@ -61,11 +64,11 @@ void ACorvo::BeginPlay()
 } // end of BeginPlay()
 
 void ACorvo::OnLedgeTracerOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
-	CanTraceForLedges = true;
+	ClimbingComponent->SetCanTraceForWall(true);
 }
 
 void ACorvo::OnLedgeTracerOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) {
-	CanTraceForLedges = false;
+	ClimbingComponent->SetCanTraceForWall(false);
 }
 
 void ACorvo::SpawnKnife() {
@@ -86,7 +89,7 @@ void ACorvo::SpawnKnife() {
 }
 
 void ACorvo::MoveForward(float Value) {
-	if (IsClimbingLedge) {
+	if (ClimbingComponent->HangingFromLedge()) {
 		return;
 	}
 	if (railMovementEnabled) {
@@ -168,8 +171,8 @@ void ACorvo::OnQuit()
 
 void ACorvo::MoveRight(float Value) {
 	if (Value != 0.0f && horizontalMovementEnabled && !railMovementEnabled) {
-		if (IsClimbingLedge) {
-			AddMovementInput(FVector::CrossProduct(WallNormal, FVector::UpVector * Value) * 0.2f);
+		if (ClimbingComponent->HangingFromLedge()) {
+			ClimbingComponent->ClimbMoveRight(Value);
 		}
 		else {
 			AddMovementInput(GetActorRightVector(), Value);
@@ -189,60 +192,6 @@ void ACorvo::AddPitch(float Value) {
 void ACorvo::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	CanGrabLedge = false;
-
-	if (CanTraceForLedges || IsClimbingLedge) {
-		FHitResult WallHit;
-		FHitResult LedgeHit;
-		TArray<AActor*> IgnoreActors = TArray<AActor*>();
-		IgnoreActors.Add(this);
-		if (UKismetSystemLibrary::SphereTraceSingle(GetWorld(), GetActorLocation(), GetActorLocation() + 150.0f * FVector(GetActorForwardVector().X, GetActorForwardVector().Y, 0.0f), 20.0f, ETraceTypeQuery::TraceTypeQuery3, false, IgnoreActors, EDrawDebugTrace::ForOneFrame, WallHit, true)) {
-			WallTraceImpact = WallHit.ImpactPoint;
-			WallNormal = WallHit.ImpactNormal;
-		}
-		if (UKismetSystemLibrary::SphereTraceSingle(GetWorld(), FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 500.0f) + GetActorForwardVector() * 70.0f, GetActorLocation() + GetActorForwardVector() * 70.0f, 20.0f, ETraceTypeQuery::TraceTypeQuery3, false, IgnoreActors, EDrawDebugTrace::ForOneFrame, LedgeHit, true)) {
-			LedgeHeight = LedgeHit.ImpactPoint;
-			if (!IsClimbingLedge) {
-				if (GetCharacterMovement()->IsFalling() && !JustLetGo) {
-					GrabLedge();
-				}
-				else {
-					CanGrabLedge = true;
-				}
-			}
-		}
-	}
-
-}
-
-void ACorvo::LetGoOfLedge() {
-	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-	IsClimbingLedge = false;
-	JustLetGo = true;
-	FTimerDelegate letGoTimerDeleg;
-	letGoTimerDeleg.BindUFunction(this, FName("ResetJustLetGo"));
-	GetOwner()->GetWorldTimerManager().SetTimer(LedgeGrabDelayHandle, letGoTimerDeleg, 1.0f, false);
-	GetCharacterMovement()->BrakingDecelerationFlying = 0.0f;
-}
-
-void ACorvo::ResetJustLetGo() {
-	JustLetGo = false;
-}
-
-void ACorvo::GrabLedge() {
-	ResetJumps();
-	IsClimbingLedge = true;
-	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
-	float CapsuleRadius = GetCapsuleComponent()->GetScaledCapsuleRadius();
-	FVector TempVector = FVector(WallNormal * FVector(CapsuleRadius, CapsuleRadius, 0.0f));
-	FVector RelativeLocation = FVector(TempVector.X + WallTraceImpact.X, TempVector.Y + WallTraceImpact.Y, LedgeHeight.Z - GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
-	FLatentActionInfo info;
-	info.CallbackTarget = this;
-	UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), RelativeLocation, UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), WallTraceImpact), false, false, 0.2f, true, EMoveComponentAction::Move, info);
-	GetCharacterMovement()->StopMovementImmediately();
-	CanGrabLedge = false;
-	GetCharacterMovement()->BrakingDecelerationFlying = 1000.0f;
 }
 
 // Called to bind functionality to input
@@ -281,8 +230,8 @@ void ACorvo::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 }
 
 void ACorvo::CrouchAction() {
-	if (IsClimbingLedge) {
-		LetGoOfLedge();
+	if (ClimbingComponent->HangingFromLedge()) {
+		ClimbingComponent->LetGoOfLedge();
 	}
 }
 
@@ -307,15 +256,15 @@ UWallRunning* ACorvo::GetWallRunningComponent() {
 }
 
 void ACorvo::SpacebarAction() {
-	if (CanGrabLedge) {
-		GrabLedge();
+	if (ClimbingComponent->CanGrabOntoLedge()) {
+		ClimbingComponent->GrabLedge();
 		return;
 	}
 	if (numJumps < maxJumps) {
 		numJumps++;
-		this->LaunchCharacter(IsClimbingLedge ? ((WallNormal * 210.0f) + (FVector::UpVector * 420.0f)) : (FVector::UpVector * 420.0f), false, true);
-		if (IsClimbingLedge)
-			LetGoOfLedge();
+		this->LaunchCharacter(FVector::UpVector * 420.0f, false, true);
+		if (ClimbingComponent->HangingFromLedge())
+			ClimbingComponent->LetGoOfLedge();
 		onGround = false;
 	}
 }
