@@ -76,6 +76,7 @@ void UClimbing::ResetJustLetGo() {
 }
 
 void UClimbing::GrabLedge() {
+	Owner->AnimHang();
 	Owner->ResetJumps();
 	IsHangingFromLedge = true;
 	Owner->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);

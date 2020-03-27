@@ -36,18 +36,18 @@ ACorvo::ACorvo()
 
 	ArmsMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Arms Mesh"));
 	ArmsMesh->SetupAttachment(ArmController);
-	ArmsMesh->SetRelativeLocation(FVector(-18.0f, 0.0f, -112.0f));
+	//ArmsMesh->SetRelativeLocation(FVector(-18.0f, 0.0f, -112.0f));
 	ArmsMesh->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
 
 	WallRunningComponent = CreateDefaultSubobject<UWallRunning>(TEXT("Wall Running"));
 
-	SphereTracer = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere Tracer"));
+	/*SphereTracer = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere Tracer"));
 	SphereTracer->SetupAttachment(GetCapsuleComponent());
 	SphereTracer->SetSphereRadius(100.0f);
 	SphereTracer->OnComponentBeginOverlap.AddDynamic(this, &ACorvo::OnLedgeTracerOverlapBegin);
 	SphereTracer->OnComponentEndOverlap.AddDynamic(this, &ACorvo::OnLedgeTracerOverlapEnd);
 
-	ClimbingComponent = CreateDefaultSubobject<UClimbing>(TEXT("Climbing"));
+	ClimbingComponent = CreateDefaultSubobject<UClimbing>(TEXT("Climbing"));*/
 } // end of constructor
 
 // Called when the game starts or when spawned
@@ -63,13 +63,13 @@ void ACorvo::BeginPlay()
 	SpawnKnife();
 } // end of BeginPlay()
 
-void ACorvo::OnLedgeTracerOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
-	ClimbingComponent->SetCanTraceForWall(true);
-}
-
-void ACorvo::OnLedgeTracerOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) {
-	ClimbingComponent->SetCanTraceForWall(false);
-}
+//void ACorvo::OnLedgeTracerOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
+//	ClimbingComponent->SetCanTraceForWall(true);
+//}
+//
+//void ACorvo::OnLedgeTracerOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) {
+//	ClimbingComponent->SetCanTraceForWall(false);
+//}
 
 void ACorvo::SpawnKnife() {
 	if (knifeClass) {
@@ -89,9 +89,9 @@ void ACorvo::SpawnKnife() {
 }
 
 void ACorvo::MoveForward(float Value) {
-	if (ClimbingComponent->HangingFromLedge()) {
+	/*if (ClimbingComponent->HangingFromLedge()) {
 		return;
-	}
+	}*/
 	if (railMovementEnabled) {
 		AddMovementInput(railDir, 1.0f);
 		//UE_LOG(LogTemp, Warning, TEXT("Movement direction: %s"), *railDir.ToString());
@@ -147,6 +147,10 @@ void ACorvo::GrappleToLocation(FVector TargetLocation) {
 	LaunchCharacter((TargetLocation - GetActorLocation()) * 1.5f, false, false);
 }
 
+void ACorvo::AnimHang() {
+	animInst->Hanging = true;
+}
+
 void ACorvo::EndWaitForKnife() {
 	animInst->Waiting = false;
 	animInst->Throwing = false;
@@ -171,12 +175,12 @@ void ACorvo::OnQuit()
 
 void ACorvo::MoveRight(float Value) {
 	if (Value != 0.0f && horizontalMovementEnabled && !railMovementEnabled) {
-		if (ClimbingComponent->HangingFromLedge()) {
+		/*if (ClimbingComponent->HangingFromLedge()) {
 			ClimbingComponent->ClimbMoveRight(Value);
 		}
-		else {
+		else {*/
 			AddMovementInput(GetActorRightVector(), Value);
-		}
+		//}
 	}
 } // end of MoveRight()
 
@@ -230,9 +234,9 @@ void ACorvo::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 }
 
 void ACorvo::CrouchAction() {
-	if (ClimbingComponent->HangingFromLedge()) {
+	/*if (ClimbingComponent->HangingFromLedge()) {
 		ClimbingComponent->LetGoOfLedge();
-	}
+	}*/
 }
 
 void ACorvo::ToggleTime() {
@@ -256,15 +260,15 @@ UWallRunning* ACorvo::GetWallRunningComponent() {
 }
 
 void ACorvo::SpacebarAction() {
-	if (ClimbingComponent->CanGrabOntoLedge()) {
+	/*if (ClimbingComponent->CanGrabOntoLedge()) {
 		ClimbingComponent->GrabLedge();
 		return;
-	}
+	}*/
 	if (numJumps < maxJumps) {
 		numJumps++;
 		this->LaunchCharacter(FVector::UpVector * 420.0f, false, true);
-		if (ClimbingComponent->HangingFromLedge())
-			ClimbingComponent->LetGoOfLedge();
+		/*if (ClimbingComponent->HangingFromLedge())
+			ClimbingComponent->LetGoOfLedge();*/
 		onGround = false;
 	}
 }

@@ -37,10 +37,10 @@ protected:
 	USkeletalMeshComponent* ArmsMesh;
 	UPROPERTY(VisibleDefaultsOnly, Category = WallRunning)
 	class UWallRunning* WallRunningComponent;
-	UPROPERTY(VisibleDefaultsOnly, Category = WallClimbing)
-	class USphereComponent* SphereTracer;
-	UPROPERTY(VisibleDefaultsOnly, Category = WallClimbing)
-	class UClimbing* ClimbingComponent;
+	//UPROPERTY(VisibleDefaultsOnly, Category = WallClimbing)
+	//class USphereComponent* SphereTracer;
+	//UPROPERTY(VisibleDefaultsOnly, Category = WallClimbing)
+	//class UClimbing* ClimbingComponent;
 
 	// CONTROL SYSTEM
 	void MoveRight(float Val);
@@ -67,10 +67,10 @@ protected:
 	FVector railDir = FVector();
 
 	// LEDGE TRACER OVERLAP
-	UFUNCTION()
+	/*UFUNCTION()
 	void OnLedgeTracerOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	UFUNCTION()
-	void OnLedgeTracerOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	void OnLedgeTracerOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);*/
 
 	// ANIMATION INSTANCE
 	UCorvoAnimInstance* animInst = nullptr;
@@ -122,5 +122,8 @@ public:
 	virtual void Landed(const FHitResult& hit) override;
 	void ResetJumps();
 	bool IsOnGround();
+
+	// ANIMATION CALLS
+	void AnimHang();
 
 };

@@ -154,9 +154,9 @@ void AKnife::StartKnifeRotForward() {
 void AKnife::LodgeKnife(bool permalodge) {
 	StopKnifeMoving();
 	PivotPoint->SetRelativeRotation(FRotator::ZeroRotator);
-	SetActorRotation(CameraStartRotation.Add(0.0f, 0.0f, -75.0f));
+	//SetActorRotation(CameraStartRotation.Add(0.0f, 0.0f, -75.0f));
 	//LodgePoint->SetRelativeRotation(FRotator(AdjustKnifeImpactPitch(UKismetMathLibrary::RandomFloatInRange(-30.0f, -55.0f), UKismetMathLibrary::RandomFloatInRange(-5.0f, -25.0f)), 0.0f, UKismetMathLibrary::RandomFloatInRange(-3.0f, -8.0f)));
-	SetActorLocation(AdjustKnifeImpactLocation());
+	//SetActorLocation(AdjustKnifeImpactLocation());
 	if (!permalodge)
 		KnifeState = EKnifeState::VE_LodgedInSomething;
 	else

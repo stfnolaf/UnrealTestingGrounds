@@ -126,7 +126,7 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 			playerDir = FVector::CrossProduct(wallNormal, FVector::DownVector);
 
 		player->SetRailDir(playerDir);
-		bool acceptableAngle = (finalHitIsLeft && FMath::FindDeltaAngleDegrees(playerDir.Rotation().Yaw, myPC->GetControlRotation().Yaw) < 15.0f) || (!finalHitIsLeft && FMath::FindDeltaAngleDegrees(playerDir.Rotation().Yaw, myPC->GetControlRotation().Yaw) > -15.0f);
+		bool acceptableAngle = (finalHitIsLeft && FMath::FindDeltaAngleDegrees(playerDir.Rotation().Yaw, myPC->GetControlRotation().Yaw) < 25.0f) || (!finalHitIsLeft && FMath::FindDeltaAngleDegrees(playerDir.Rotation().Yaw, myPC->GetControlRotation().Yaw) > -25.0f);
 		FHitResult groundCheck;
 		bool groundHit = GetWorld()->LineTraceSingleByChannel(groundCheck, player->GetActorLocation(), player->GetActorLocation() + FVector::DownVector * 150.0f, ECollisionChannel::ECC_Visibility);
 		if (!onWall

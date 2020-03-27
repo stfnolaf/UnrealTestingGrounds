@@ -33,6 +33,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
 		float KnifeCatchKnockbackAlpha = 0.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
+		bool Hanging = false;
+
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
 		bool Knockback = false;
 
