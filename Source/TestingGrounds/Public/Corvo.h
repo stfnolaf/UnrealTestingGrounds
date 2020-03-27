@@ -54,7 +54,10 @@ protected:
 	void OnQuit();
 	void ToggleTime();
 	void CrouchAction();
+	void Sprint();
+	void Walk();
 	UInputComponent* PlayerInputComponent;
+	bool CanSprint();
 
 	// JUMPING
 	int numJumps = 0;
@@ -83,8 +86,6 @@ protected:
 	TSubclassOf<class AKnife> knifeClass;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCameraShake> CatchCameraShake;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Corvo)
-	bool knifeThrown = true;
 	FTimerHandle knifeWaitHandle;
 	UFUNCTION(BlueprintCallable, Category = KnifeThrowing)
 	void ThrowKnife();
@@ -104,6 +105,7 @@ public:
 	UCameraComponent* GetCamera();
 	UWallRunning* GetWallRunningComponent();
 	float GetForwardMovement();
+	float GetRightMovement();
 
 	// RAIL MOVEMENT SYSTEM
 	void LockRailMovement();

@@ -36,6 +36,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
 		bool Hanging = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
+		bool Sprinting = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
+		bool HasKnife = false;
+
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BoomerangThrowing)
 		bool Knockback = false;
 

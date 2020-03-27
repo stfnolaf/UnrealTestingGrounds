@@ -131,7 +131,8 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 		bool groundHit = GetWorld()->LineTraceSingleByChannel(groundCheck, player->GetActorLocation(), player->GetActorLocation() + FVector::DownVector * 150.0f, ECollisionChannel::ECC_Visibility);
 		if (!onWall
 			&& player->GetMovementComponent()->IsFalling()
-			&& !groundHit && acceptableAngle)
+			&& !groundHit && acceptableAngle
+			&& ((finalHitIsLeft && player->GetRightMovement() < 0.0f) || (!finalHitIsLeft && player->GetRightMovement() > 0.0f)))
 		{
 			StartWallRunning();
 		}
@@ -197,7 +198,9 @@ void UWallRunning::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
 			|| (finalHitIsLeft && FMath::FindDeltaAngleDegrees(playerDir.Rotation().Yaw, myPC->GetControlRotation().Yaw) > 30.0f)
 			|| (!finalHitIsLeft && FMath::FindDeltaAngleDegrees(playerDir.Rotation().Yaw, myPC->GetControlRotation().Yaw) < -30.0f)
 			|| (finalHitIsLeft && FMath::FindDeltaAngleDegrees(playerDir.Rotation().Yaw, myPC->GetControlRotation().Yaw) < -30.0f && directionLocked)
-			|| (!finalHitIsLeft && FMath::FindDeltaAngleDegrees(playerDir.Rotation().Yaw, myPC->GetControlRotation().Yaw) > 30.0f && directionLocked)) {
+			|| (!finalHitIsLeft && FMath::FindDeltaAngleDegrees(playerDir.Rotation().Yaw, myPC->GetControlRotation().Yaw) > 30.0f && directionLocked)
+			|| (finalHitIsLeft && player->GetRightMovement() >= 0.0f)
+			|| (!finalHitIsLeft && player->GetRightMovement() <= 0.0f)) {
 			StopWallRunning();
 			if (finalHitResult.Actor.IsValid()) {
 				lastWall = finalHitResult.Actor.Get();

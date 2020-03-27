@@ -83,7 +83,7 @@ void ACorvo::SpawnKnife() {
 			knife = world->SpawnActor<AKnife>(knifeClass, spawnLocation, rotator, spawnParams);
 			knife->AttachToComponent(ArmsMesh, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("knife_socket"));
 			knife->InitializeOwner(this);
-			knifeThrown = false;
+			animInst->HasKnife = true;
 		}
 	}
 }
@@ -103,8 +103,10 @@ void ACorvo::MoveForward(float Value) {
 
 void ACorvo::OnInitiateAbility()
 {
-	if(animInst != nullptr && !knifeThrown)
+	if (animInst != nullptr && animInst->HasKnife) {
+		Walk();
 		animInst->Aiming = true;
+	}
 }
 
 void ACorvo::OnReleaseAbility()
@@ -114,19 +116,19 @@ void ACorvo::OnReleaseAbility()
 }
 
 void ACorvo::OnInitiateAttack() {
-	if (animInst->Aiming && !knifeThrown) {
+	if (animInst->Aiming && animInst->HasKnife) {
 		animInst->Throwing = true;
 	}
-	else if (knifeThrown) {
+	else if (!animInst->HasKnife) {
 		RecallKnife();
 	}
 }
 
 void ACorvo::ThrowKnife() {
-	if (!knifeThrown) {
+	if (animInst->HasKnife) {
 		knife->DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld, false));
 		knife->Throw(PlayerCamera->GetComponentRotation(), PlayerCamera->GetForwardVector(), PlayerCamera->GetComponentLocation(), 3500.0f);
-		knifeThrown = true;
+		animInst->HasKnife = false;
 		animInst->Throwing = false;
 		animInst->Aiming = false;
 	}
@@ -155,7 +157,7 @@ void ACorvo::EndWaitForKnife() {
 	animInst->Waiting = false;
 	animInst->Throwing = false;
 	animInst->Aiming = false;
-	knifeThrown = false;
+	animInst->HasKnife = true;
 	knife->AttachToComponent(ArmsMesh, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, true), FName("knife_socket"));
 	UGameplayStatics::PlayWorldCameraShake(GetWorld(), CatchCameraShake, GetActorLocation(), 0.0f, 500.0f);
 }
@@ -225,6 +227,9 @@ void ACorvo::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	PlayerInputComponent->BindAction("Slow", IE_Pressed, this, &ACorvo::ToggleTime);
 
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ACorvo::Sprint);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ACorvo::Walk);
+
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ACorvo::CrouchAction);
 
 	PlayerInputComponent->BindAction("Quit", IE_Pressed, this, &ACorvo::OnQuit);
@@ -239,12 +244,30 @@ void ACorvo::CrouchAction() {
 	}*/
 }
 
+void ACorvo::Sprint() {
+	if (!CanSprint())
+		return;
+	animInst->Sprinting = true;
+	GetCharacterMovement()->MaxWalkSpeed = 1200.0f;
+}
+
+void ACorvo::Walk() {
+	if (animInst->Sprinting == false)
+		return;
+	animInst->Sprinting = false;
+	GetCharacterMovement()->MaxWalkSpeed = 600.0f;
+}
+
 void ACorvo::ToggleTime() {
 	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), UGameplayStatics::GetGlobalTimeDilation(GetWorld()) == 0.25f ? 1.0f : 0.25f);
 }
 
 float ACorvo::GetForwardMovement() {
 	return PlayerInputComponent->GetAxisValue(FName("MoveForward"));
+}
+
+float ACorvo::GetRightMovement() {
+	return PlayerInputComponent->GetAxisValue(FName("MoveRight"));
 }
 
 USkeletalMeshComponent* ACorvo::GetMyMesh() {
@@ -259,6 +282,10 @@ UWallRunning* ACorvo::GetWallRunningComponent() {
 	return WallRunningComponent;
 }
 
+bool ACorvo::CanSprint() {
+	return onGround && GetForwardMovement() >= 0.8f && !railMovementEnabled && !animInst->Aiming && !animInst->Waiting && !animInst->Throwing;
+}
+
 void ACorvo::SpacebarAction() {
 	/*if (ClimbingComponent->CanGrabOntoLedge()) {
 		ClimbingComponent->GrabLedge();
@@ -270,6 +297,8 @@ void ACorvo::SpacebarAction() {
 		/*if (ClimbingComponent->HangingFromLedge())
 			ClimbingComponent->LetGoOfLedge();*/
 		onGround = false;
+		if (animInst->Sprinting)
+			animInst->Sprinting = false;
 	}
 }
 
@@ -287,6 +316,8 @@ void ACorvo::Landed(const FHitResult& hit) {
 	Super::Landed(hit);
 	numJumps = 0;
 	onGround = true;
+	if (GetCharacterMovement()->MaxWalkSpeed == 1200.0f)
+		animInst->Sprinting = true;
 }
 
 void ACorvo::ResetJumps() {
@@ -294,6 +325,7 @@ void ACorvo::ResetJumps() {
 }
 
 void ACorvo::LockRailMovement() {
+	Walk();
 	railMovementEnabled = true;
 	//mySpringArm->bInheritYaw = false;
 	//mySpringArm->bInheritPitch = false;
